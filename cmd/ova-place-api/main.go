@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-	fmt.Printf("I'm a ova-place-api")
+	fmt.Println("I'm an ova-place-api")
 }
