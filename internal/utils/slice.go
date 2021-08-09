@@ -55,17 +55,11 @@ func FilterByBlackListInt(slice []int, blackList []int) []int {
 	var filtered []int
 
 	for i := range slice {
-		push := true
-		for j := range blackList {
-			if slice[i] == blackList[j] {
-				push = false
-				break
-			}
+		if inIntSlice(slice[i], blackList) {
+			continue
 		}
 
-		if push {
-			filtered = append(filtered, slice[i])
-		}
+		filtered = append(filtered, slice[i])
 	}
 
 	return filtered
@@ -75,18 +69,32 @@ func FilterByBlackListStr(slice []string, blackList []string) []string {
 	var filtered []string
 
 	for i := range slice {
-		push := true
-		for j := range blackList {
-			if slice[i] == blackList[j] {
-				push = false
-				break
-			}
+		if inStrSlice(slice[i], blackList) {
+			continue
 		}
 
-		if push {
-			filtered = append(filtered, slice[i])
-		}
+		filtered = append(filtered, slice[i])
 	}
 
 	return filtered
+}
+
+func inIntSlice(needle int, haystack []int) bool {
+	for i := range haystack {
+		if needle == haystack[i] {
+			return true
+		}
+	}
+
+	return false
+}
+
+func inStrSlice(needle string, haystack []string) bool {
+	for i := range haystack {
+		if needle == haystack[i] {
+			return true
+		}
+	}
+
+	return false
 }
