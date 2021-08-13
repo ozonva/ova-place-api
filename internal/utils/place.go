@@ -41,10 +41,10 @@ func PlacesSliceToMap(entities []models.Place) (map[uint64]models.Place, error) 
 	resultMap := make(map[uint64]models.Place, len(entities))
 
 	for i := range entities {
-		if _, ok := resultMap[entities[i].UserId]; ok {
+		if _, ok := resultMap[entities[i].UserID]; ok {
 			return nil, errors.New("duplicate keys")
 		}
-		resultMap[entities[i].UserId] = entities[i]
+		resultMap[entities[i].UserID] = entities[i]
 	}
 
 	return resultMap, nil

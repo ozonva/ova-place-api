@@ -4,7 +4,7 @@ import "testing"
 
 func TestString_Place(t *testing.T) {
 	place := Place{
-		UserId: 1,
+		UserID: 1,
 		Seat:   "34G",
 		Memo:   "aeroflot 12.04.2022 09:00",
 	}

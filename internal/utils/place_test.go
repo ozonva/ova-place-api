@@ -21,10 +21,42 @@ type PlacesSliceToMapTestCase struct {
 func TestSplitToBatches(t *testing.T) {
 	testCases := []SplitPlacesToBatchesTestCase{
 		{
-			[][]models.Place{{{UserId: 1}, {UserId: 2}}, {{UserId: 3}, {UserId: 4}}}, []models.Place{{UserId: 1}, {UserId: 2}, {UserId: 3}, {UserId: 4}}, 2,
+			[][]models.Place{
+				{
+					{UserID: 1},
+					{UserID: 2},
+				},
+				{
+					{UserID: 3},
+					{UserID: 4},
+				},
+			},
+			[]models.Place{
+				{UserID: 1},
+				{UserID: 2},
+				{UserID: 3},
+				{UserID: 4},
+			},
+			2,
 		},
 		{
-			[][]models.Place{{{UserId: 1}, {UserId: 2}, {UserId: 3}}, {{UserId: 4}}}, []models.Place{{UserId: 1}, {UserId: 2}, {UserId: 3}, {UserId: 4}}, 3,
+			[][]models.Place{
+				{
+					{UserID: 1},
+					{UserID: 2},
+					{UserID: 3},
+				},
+				{
+					{UserID: 4},
+				},
+			},
+			[]models.Place{
+				{UserID: 1},
+				{UserID: 2},
+				{UserID: 3},
+				{UserID: 4},
+			},
+			3,
 		},
 	}
 
@@ -43,7 +75,15 @@ func TestSplitToBatches(t *testing.T) {
 }
 
 func TestSplitToBatchesError(t *testing.T) {
-	_, err := SplitPlacesToBatches([]models.Place{{UserId: 1}, {UserId: 2}, {UserId: 3}, {UserId: 4}}, 0)
+	_, err := SplitPlacesToBatches(
+		[]models.Place{
+			{UserID: 1},
+			{UserID: 2},
+			{UserID: 3},
+			{UserID: 4},
+		},
+		0,
+	)
 
 	if err == nil {
 		t.Fatal("An error has not been occurred", err)
@@ -51,8 +91,8 @@ func TestSplitToBatchesError(t *testing.T) {
 }
 
 func TestSliceToMap(t *testing.T) {
-	place1 := models.Place{UserId: 1}
-	place2 := models.Place{UserId: 2}
+	place1 := models.Place{UserID: 1}
+	place2 := models.Place{UserID: 2}
 	testCases := []PlacesSliceToMapTestCase{
 		{
 			map[uint64]models.Place{1: place1, 2: place2}, []models.Place{place1, place2},
@@ -74,8 +114,8 @@ func TestSliceToMap(t *testing.T) {
 }
 
 func TestSliceToMapError(t *testing.T) {
-	place1 := models.Place{UserId: 1}
-	place2 := models.Place{UserId: 1}
+	place1 := models.Place{UserID: 1}
+	place2 := models.Place{UserID: 1}
 
 	_, err := PlacesSliceToMap([]models.Place{place1, place2})
 

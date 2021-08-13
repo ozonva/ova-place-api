@@ -3,7 +3,7 @@ package models
 import "fmt"
 
 type Place struct {
-	UserId uint64
+	UserID uint64
 	Memo   string
 	Seat   string
 }
