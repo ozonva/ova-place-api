@@ -2,6 +2,7 @@ package saver
 
 import (
 	"errors"
+	"github.com/ozonva/ova-place-api/internal/utils"
 	"time"
 
 	"github.com/ozonva/ova-place-api/internal/flusher"
@@ -22,7 +23,7 @@ func NewSaver(
 	flusher flusher.Flusher,
 ) Saver {
 	saver := &saver{
-		done:     make(chan bool),
+		done:     *utils.NewSyncChannel(),
 		entities: make([]models.Place, 0, capacity),
 		flusher:  flusher,
 	}
@@ -34,7 +35,7 @@ func NewSaver(
 
 // saver is a Saver implementation.
 type saver struct {
-	done     chan bool
+	done     utils.SyncChannel
 	entities []models.Place
 	flusher  flusher.Flusher
 }
@@ -61,9 +62,10 @@ func (s *saver) Close() error {
 		return err
 	}
 
-	s.done <- true
-
-	close(s.done)
+	s.done.Once.Do(func() {
+		s.done.C <- true
+		close(s.done.C)
+	})
 
 	return nil
 }
@@ -76,7 +78,7 @@ func (s *saver) init(tickDuration time.Duration) {
 
 		for {
 			select {
-			case <-s.done:
+			case <-s.done.C:
 				ticker.Stop()
 
 				return

@@ -1,6 +1,3 @@
-//go:build !race
-// +build !race
-
 package saver_test
 
 import (
@@ -46,20 +43,6 @@ var _ = Describe("Saver", func() {
 			})
 		})
 
-		Context("close method is called after first saving timeout", func() {
-			It("saving one element occurs by timeout", func() {
-				saverInstance := saver.NewSaver(2, time.Millisecond*1, flusherMock)
-
-				flusherMock.EXPECT().Flush(gomock.Eq(places[0:1])).Return([]models.Place{})
-				flusherMock.EXPECT().Flush(gomock.Eq(places[1:2])).Return([]models.Place{})
-
-				Expect(saverInstance.Save(places[0])).To(BeNil())
-				time.Sleep(time.Millisecond * 4)
-				Expect(saverInstance.Save(places[1])).To(BeNil())
-				Expect(saverInstance.Close()).To(BeNil())
-			})
-		})
-
 		Context("the buffer is full", func() {
 			It("second save should return an error", func() {
 				saverInstance := saver.NewSaver(1, time.Second*2, flusherMock)
@@ -81,6 +64,15 @@ var _ = Describe("Saver", func() {
 				Expect(saverInstance.Save(places[0])).To(BeNil())
 				Expect(saverInstance.Save(places[1])).To(BeNil())
 				Expect(saverInstance.Close()).To(Not(BeNil()))
+			})
+		})
+
+		Context("when the call to the close method happens 2 times", func() {
+			It("not panics", func() {
+				saverInstance := saver.NewSaver(2, time.Second*2, flusherMock)
+
+				Expect(saverInstance.Close()).To(BeNil())
+				Expect(saverInstance.Close()).To(BeNil())
 			})
 		})
 	})
