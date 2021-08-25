@@ -37,9 +37,10 @@ func NewSaver(
 // saver is a Saver implementation.
 type saver struct {
 	m        sync.Mutex
-	done     utils.SyncChannel
 	entities []models.Place
-	flusher  flusher.Flusher
+
+	done    utils.SyncChannel
+	flusher flusher.Flusher
 }
 
 // Save adds models.Place to the buffer.
