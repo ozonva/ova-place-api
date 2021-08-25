@@ -2,7 +2,7 @@ package flusher_test
 
 import (
 	"errors"
-	
+
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
