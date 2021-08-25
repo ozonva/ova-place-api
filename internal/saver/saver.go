@@ -3,6 +3,7 @@ package saver
 import (
 	"errors"
 	"github.com/ozonva/ova-place-api/internal/utils"
+	"sync"
 	"time"
 
 	"github.com/ozonva/ova-place-api/internal/flusher"
@@ -35,6 +36,7 @@ func NewSaver(
 
 // saver is a Saver implementation.
 type saver struct {
+	m        sync.Mutex
 	done     utils.SyncChannel
 	entities []models.Place
 	flusher  flusher.Flusher
@@ -44,6 +46,9 @@ type saver struct {
 // It returns nil when the models.Place has been successfully added in a buffer.
 // It returns an error when the buffer capacity is exceeded.
 func (s *saver) Save(entity models.Place) error {
+	s.m.Lock()
+	defer s.m.Unlock()
+
 	if len(s.entities) >= cap(s.entities) {
 		return errors.New("capacity is exceeded")
 	}
@@ -95,6 +100,9 @@ func (s *saver) init(tickDuration time.Duration) {
 // It returns an error when some entities have not been saved.
 // These entities will remain in the buffer for the next saving.
 func (s *saver) flush() error {
+	s.m.Lock()
+	defer s.m.Unlock()
+
 	if len(s.entities) == 0 {
 		return nil
 	}
