@@ -1,0 +1,252 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "ova-place-api.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "OvaPlaceApiV1"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/places": {
+      "get": {
+        "operationId": "OvaPlaceApiV1_ListPlacesV1",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiListPlacesResponseV1"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "perPage",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "OvaPlaceApiV1"
+        ]
+      },
+      "post": {
+        "operationId": "OvaPlaceApiV1_CreatePlaceV1",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPlaceV1"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "OvaPlaceApiV1"
+        ]
+      }
+    },
+    "/v1/places/{placeId}": {
+      "get": {
+        "operationId": "OvaPlaceApiV1_DescribePlaceV1",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPlaceV1"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "placeId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "OvaPlaceApiV1"
+        ]
+      },
+      "delete": {
+        "operationId": "OvaPlaceApiV1_RemovePlaceV1",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiEmptyV1"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "placeId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "OvaPlaceApiV1"
+        ]
+      },
+      "put": {
+        "operationId": "OvaPlaceApiV1_UpdatePlaceV1",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPlaceV1"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "placeId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "OvaPlaceApiV1"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "apiEmptyV1": {
+      "type": "object"
+    },
+    "apiListPlacesResponseV1": {
+      "type": "object",
+      "properties": {
+        "places": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/apiPlaceV1"
+          }
+        },
+        "pagination": {
+          "$ref": "#/definitions/apiPaginationV1"
+        }
+      }
+    },
+    "apiPaginationV1": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "perPage": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "total": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "apiPlaceV1": {
+      "type": "object",
+      "properties": {
+        "placeId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "userId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "seat": {
+          "type": "string"
+        },
+        "memo": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "typeUrl": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

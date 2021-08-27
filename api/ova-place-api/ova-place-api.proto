@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+package ova.place.api;
+
+import "validate/validate.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/ozonva/ova-place-api/pkg/ova-place-api;ova_place_api";
+
+service OvaPlaceApiV1 {
+  rpc CreatePlaceV1(CreatePlaceRequestV1) returns (PlaceV1) {
+    option (google.api.http) = {
+      post: "/v1/places"
+    };
+  }
+
+  rpc DescribePlaceV1(DescribePlaceRequestV1) returns (PlaceV1) {
+    option (google.api.http) = {
+      get: "/v1/places/{place_id}"
+    };
+  }
+
+  rpc ListPlacesV1(ListPlacesRequestV1) returns (ListPlacesResponseV1) {
+    option (google.api.http) = {
+      get: "/v1/places"
+    };
+  }
+
+  rpc UpdatePlaceV1(UpdatePlaceRequestV1) returns (PlaceV1) {
+    option (google.api.http) = {
+      put: "/v1/places/{place_id}"
+    };
+  }
+
+  rpc RemovePlaceV1(RemovePlaceRequestV1) returns (EmptyV1) {
+    option (google.api.http) = {
+      delete: "/v1/places/{place_id}"
+    };
+  }
+}
+
+message CreatePlaceRequestV1 {
+  uint64 user_id = 1 [(validate.rules).uint64.gt = 0];
+  string seat = 2 [(validate.rules).string = {min_len: 1, max_len: 255}];
+  string memo = 3 [(validate.rules).string = {min_len: 1, max_len: 255}];
+}
+
+message DescribePlaceRequestV1 {
+  uint64 place_id = 1 [(validate.rules).uint64.gt = 0];
+}
+
+message ListPlacesRequestV1 {
+  uint64 page = 1 [(validate.rules).uint64.gt = 0];
+  uint64 per_page = 2 [(validate.rules).uint64.gt = 0];
+}
+
+message ListPlacesResponseV1 {
+  repeated PlaceV1 places = 1;
+  PaginationV1 pagination = 2;
+}
+
+message UpdatePlaceRequestV1 {
+  uint64 place_id = 1 [(validate.rules).uint64.gt = 0];
+  uint64 user_id = 2 [(validate.rules).uint64.gt = 0];
+  string seat = 3 [(validate.rules).string = {min_len: 1, max_len: 255}];
+  string memo = 4 [(validate.rules).string = {min_len: 1, max_len: 255}];
+}
+
+message RemovePlaceRequestV1 {
+  uint64 place_id = 1 [(validate.rules).uint64.gt = 0];
+}
+
+message PlaceV1 {
+  uint64 place_id = 1;
+  uint64 user_id = 2;
+  string seat = 3;
+  string memo = 4;
+}
+
+message PaginationV1 {
+  uint64 page = 1;
+  uint64 per_page = 2;
+  uint64 total = 3;
+}
+
+message EmptyV1 {
+
+}
+
+
