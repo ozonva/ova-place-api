@@ -4,6 +4,7 @@ package ova.place.api;
 
 import "validate/validate.proto";
 import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
 
 option go_package = "github.com/ozonva/ova-place-api/pkg/ova-place-api;ova_place_api";
 
@@ -32,7 +33,7 @@ service OvaPlaceApiV1 {
     };
   }
 
-  rpc RemovePlaceV1(RemovePlaceRequestV1) returns (EmptyV1) {
+  rpc RemovePlaceV1(RemovePlaceRequestV1) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       delete: "/v1/places/{place_id}"
     };
@@ -81,10 +82,6 @@ message PaginationV1 {
   uint64 page = 1;
   uint64 per_page = 2;
   uint64 total = 3;
-}
-
-message EmptyV1 {
-
 }
 
 

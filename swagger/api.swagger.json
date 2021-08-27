@@ -110,7 +110,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiEmptyV1"
+              "properties": {}
             }
           },
           "default": {
@@ -165,9 +165,6 @@
     }
   },
   "definitions": {
-    "apiEmptyV1": {
-      "type": "object"
-    },
     "apiListPlacesResponseV1": {
       "type": "object",
       "properties": {

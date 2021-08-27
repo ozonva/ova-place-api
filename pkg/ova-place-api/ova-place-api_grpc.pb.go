@@ -7,6 +7,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -22,7 +23,7 @@ type OvaPlaceApiV1Client interface {
 	DescribePlaceV1(ctx context.Context, in *DescribePlaceRequestV1, opts ...grpc.CallOption) (*PlaceV1, error)
 	ListPlacesV1(ctx context.Context, in *ListPlacesRequestV1, opts ...grpc.CallOption) (*ListPlacesResponseV1, error)
 	UpdatePlaceV1(ctx context.Context, in *UpdatePlaceRequestV1, opts ...grpc.CallOption) (*PlaceV1, error)
-	RemovePlaceV1(ctx context.Context, in *RemovePlaceRequestV1, opts ...grpc.CallOption) (*EmptyV1, error)
+	RemovePlaceV1(ctx context.Context, in *RemovePlaceRequestV1, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type ovaPlaceApiV1Client struct {
@@ -69,8 +70,8 @@ func (c *ovaPlaceApiV1Client) UpdatePlaceV1(ctx context.Context, in *UpdatePlace
 	return out, nil
 }
 
-func (c *ovaPlaceApiV1Client) RemovePlaceV1(ctx context.Context, in *RemovePlaceRequestV1, opts ...grpc.CallOption) (*EmptyV1, error) {
-	out := new(EmptyV1)
+func (c *ovaPlaceApiV1Client) RemovePlaceV1(ctx context.Context, in *RemovePlaceRequestV1, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/ova.place.api.OvaPlaceApiV1/RemovePlaceV1", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -86,7 +87,7 @@ type OvaPlaceApiV1Server interface {
 	DescribePlaceV1(context.Context, *DescribePlaceRequestV1) (*PlaceV1, error)
 	ListPlacesV1(context.Context, *ListPlacesRequestV1) (*ListPlacesResponseV1, error)
 	UpdatePlaceV1(context.Context, *UpdatePlaceRequestV1) (*PlaceV1, error)
-	RemovePlaceV1(context.Context, *RemovePlaceRequestV1) (*EmptyV1, error)
+	RemovePlaceV1(context.Context, *RemovePlaceRequestV1) (*emptypb.Empty, error)
 	mustEmbedUnimplementedOvaPlaceApiV1Server()
 }
 
@@ -106,7 +107,7 @@ func (UnimplementedOvaPlaceApiV1Server) ListPlacesV1(context.Context, *ListPlace
 func (UnimplementedOvaPlaceApiV1Server) UpdatePlaceV1(context.Context, *UpdatePlaceRequestV1) (*PlaceV1, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdatePlaceV1 not implemented")
 }
-func (UnimplementedOvaPlaceApiV1Server) RemovePlaceV1(context.Context, *RemovePlaceRequestV1) (*EmptyV1, error) {
+func (UnimplementedOvaPlaceApiV1Server) RemovePlaceV1(context.Context, *RemovePlaceRequestV1) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemovePlaceV1 not implemented")
 }
 func (UnimplementedOvaPlaceApiV1Server) mustEmbedUnimplementedOvaPlaceApiV1Server() {}
