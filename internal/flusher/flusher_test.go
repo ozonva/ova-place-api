@@ -8,17 +8,17 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/ozonva/ova-place-api/internal/flusher"
 	"github.com/ozonva/ova-place-api/internal/models"
-	mock_repo "github.com/ozonva/ova-place-api/mocks"
+	"github.com/ozonva/ova-place-api/mocks"
 )
 
 var _ = Describe("Flusher", func() {
 	var (
-		repoMock *mock_repo.MockRepo
+		repoMock *mocks.MockRepo
 		places   []models.Place
 	)
 	BeforeEach(func() {
 		ctrl := gomock.NewController(GinkgoT())
-		repoMock = mock_repo.NewMockRepo(ctrl)
+		repoMock = mocks.NewMockRepo(ctrl)
 		defer ctrl.Finish()
 
 		places = []models.Place{
