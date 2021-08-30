@@ -3,9 +3,10 @@ package models
 import "fmt"
 
 type Place struct {
-	UserID uint64
-	Memo   string
-	Seat   string
+	ID     uint64 `db:"id"`
+	Memo   string `db:"memo"`
+	Seat   string `db:"seat"`
+	UserID uint64 `db:"user_id"`
 }
 
 func (p Place) String() string {
