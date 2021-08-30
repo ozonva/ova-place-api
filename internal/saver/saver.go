@@ -2,9 +2,10 @@ package saver
 
 import (
 	"errors"
-	"github.com/ozonva/ova-place-api/internal/utils"
 	"sync"
 	"time"
+
+	"github.com/ozonva/ova-place-api/internal/utils"
 
 	"github.com/ozonva/ova-place-api/internal/flusher"
 	"github.com/ozonva/ova-place-api/internal/models"

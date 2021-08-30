@@ -6,6 +6,7 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"github.com/ozonva/ova-place-api/internal/flusher"
 	"github.com/ozonva/ova-place-api/internal/models"
 	"github.com/ozonva/ova-place-api/mocks"

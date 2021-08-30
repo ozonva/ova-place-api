@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ozonva/ova-place-api/internal/models"
-	"github.com/ozonva/ova-place-api/internal/repo"
-	desc "github.com/ozonva/ova-place-api/pkg/ova-place-api"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
+
+	"github.com/ozonva/ova-place-api/internal/models"
+	"github.com/ozonva/ova-place-api/internal/repo"
+	desc "github.com/ozonva/ova-place-api/pkg/ova-place-api"
 )
 
 type api struct {

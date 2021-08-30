@@ -16,6 +16,7 @@ require (
 	github.com/onsi/gomega v1.15.0
 	github.com/rs/zerolog v1.23.0
 	golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1 // indirect
+	golang.org/x/tools v0.1.5 // indirect
 	google.golang.org/genproto v0.0.0-20210617175327-b9e0b3197ced
 	google.golang.org/grpc v1.40.0
 	google.golang.org/protobuf v1.26.0

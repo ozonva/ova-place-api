@@ -10,10 +10,11 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"google.golang.org/grpc"
+
 	"github.com/ozonva/ova-place-api/internal/api"
 	"github.com/ozonva/ova-place-api/internal/repo"
 	desc "github.com/ozonva/ova-place-api/pkg/ova-place-api"
-	"google.golang.org/grpc"
 )
 
 const (

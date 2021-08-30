@@ -27,6 +27,10 @@ lint: ## Lint the source files
 fmt:
 	gofmt -s -w .
 
+.PHONY: goimports
+goimports:
+	goimports -w -local github.com/ozonva/ova-place-api ./..
+
 all: generate build
 
 .PHONY: vendor-proto
