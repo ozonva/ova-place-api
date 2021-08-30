@@ -9,6 +9,7 @@ import (
 	"github.com/onsi/gomega"
 	"github.com/ozonva/ova-place-api/internal/api"
 	"github.com/ozonva/ova-place-api/internal/models"
+	"github.com/ozonva/ova-place-api/internal/repo"
 	"github.com/ozonva/ova-place-api/mocks"
 	desc "github.com/ozonva/ova-place-api/pkg/ova-place-api"
 )
@@ -29,23 +30,29 @@ var _ = Describe("Api", func() {
 			It("should return place", func() {
 				apiInstance := api.NewOvaPlaceApi(repoMock)
 
-				place := models.Place{UserID: 1, Memo: "Aero", Seat: "24G"}
+				place := models.Place{
+					UserID: 1,
+					Memo:   "Aero",
+					Seat:   "24G",
+				}
 
 				repoMock.EXPECT().AddEntity(gomock.Eq(place)).Return(uint64(1), nil)
 
 				ctx := context.Background()
 
 				request := desc.CreatePlaceRequestV1{
-					UserId: place.UserID, Memo: place.Memo, Seat: place.Seat,
+					UserId: place.UserID,
+					Memo:   place.Memo,
+					Seat:   place.Seat,
 				}
 
 				response, err := apiInstance.CreatePlaceV1(ctx, &request)
 
-				gomega.Expect(response.UserId == place.UserID).To(gomega.BeTrue())
-				gomega.Expect(response.Memo == place.Memo).To(gomega.BeTrue())
-				gomega.Expect(response.Seat == place.Seat).To(gomega.BeTrue())
-				gomega.Expect(response.PlaceId == uint64(1)).To(gomega.BeTrue())
-				gomega.Expect(err == nil).To(gomega.BeTrue())
+				gomega.Expect(response.UserId).To(gomega.Equal(place.UserID))
+				gomega.Expect(response.Memo).To(gomega.Equal(place.Memo))
+				gomega.Expect(response.Seat).To(gomega.Equal(place.Seat))
+				gomega.Expect(response.PlaceId).To(gomega.Equal(uint64(1)))
+				gomega.Expect(err).To(gomega.BeNil())
 			})
 		})
 
@@ -53,19 +60,25 @@ var _ = Describe("Api", func() {
 			It("should return internal error", func() {
 				apiInstance := api.NewOvaPlaceApi(repoMock)
 
-				place := models.Place{UserID: 1, Memo: "Aero", Seat: "24G"}
+				place := models.Place{
+					UserID: 1,
+					Memo:   "Aero",
+					Seat:   "24G",
+				}
 
 				repoMock.EXPECT().AddEntity(gomock.Eq(place)).Return(uint64(0), errors.New("test error"))
 
 				ctx := context.Background()
 
 				request := desc.CreatePlaceRequestV1{
-					UserId: place.UserID, Memo: place.Memo, Seat: place.Seat,
+					UserId: place.UserID,
+					Memo:   place.Memo,
+					Seat:   place.Seat,
 				}
 
 				_, err := apiInstance.CreatePlaceV1(ctx, &request)
 
-				gomega.Expect(err.Error() == "rpc error: code = Internal desc = internal error").To(gomega.BeTrue())
+				gomega.Expect(err.Error()).To(gomega.Equal("rpc error: code = Internal desc = internal error"))
 			})
 		})
 	})
@@ -75,7 +88,12 @@ var _ = Describe("Api", func() {
 			It("should return place", func() {
 				apiInstance := api.NewOvaPlaceApi(repoMock)
 
-				place := models.Place{ID: 1, UserID: 1, Memo: "Aero", Seat: "24G"}
+				place := models.Place{
+					ID:     1,
+					UserID: 1,
+					Memo:   "Aero",
+					Seat:   "24G",
+				}
 
 				repoMock.EXPECT().DescribeEntity(gomock.Eq(place.ID)).Return(&place, nil)
 
@@ -87,11 +105,11 @@ var _ = Describe("Api", func() {
 
 				response, err := apiInstance.DescribePlaceV1(ctx, &request)
 
-				gomega.Expect(response.UserId == place.UserID).To(gomega.BeTrue())
-				gomega.Expect(response.Memo == place.Memo).To(gomega.BeTrue())
-				gomega.Expect(response.Seat == place.Seat).To(gomega.BeTrue())
-				gomega.Expect(response.PlaceId == place.ID).To(gomega.BeTrue())
-				gomega.Expect(err == nil).To(gomega.BeTrue())
+				gomega.Expect(response.UserId).To(gomega.Equal(place.UserID))
+				gomega.Expect(response.Memo).To(gomega.Equal(place.Memo))
+				gomega.Expect(response.Seat).To(gomega.Equal(place.Seat))
+				gomega.Expect(response.PlaceId).To(gomega.Equal(place.ID))
+				gomega.Expect(err).To(gomega.BeNil())
 			})
 		})
 
@@ -99,7 +117,12 @@ var _ = Describe("Api", func() {
 			It("should return error", func() {
 				apiInstance := api.NewOvaPlaceApi(repoMock)
 
-				place := models.Place{ID: 1, UserID: 1, Memo: "Aero", Seat: "24G"}
+				place := models.Place{
+					ID:     1,
+					UserID: 1,
+					Memo:   "Aero",
+					Seat:   "24G",
+				}
 
 				repoMock.EXPECT().DescribeEntity(gomock.Eq(place.ID)).Return(nil, errors.New("test error"))
 
@@ -111,7 +134,7 @@ var _ = Describe("Api", func() {
 
 				_, err := apiInstance.DescribePlaceV1(ctx, &request)
 
-				gomega.Expect(err.Error() == "rpc error: code = Internal desc = internal error").To(gomega.BeTrue())
+				gomega.Expect(err.Error()).To(gomega.Equal("rpc error: code = Internal desc = internal error"))
 			})
 		})
 
@@ -119,9 +142,14 @@ var _ = Describe("Api", func() {
 			It("should return error", func() {
 				apiInstance := api.NewOvaPlaceApi(repoMock)
 
-				place := models.Place{ID: 1, UserID: 1, Memo: "Aero", Seat: "24G"}
+				place := models.Place{
+					ID:     1,
+					UserID: 1,
+					Memo:   "Aero",
+					Seat:   "24G",
+				}
 
-				repoMock.EXPECT().DescribeEntity(gomock.Eq(place.ID)).Return(nil, errors.New("sql: no rows in result set"))
+				repoMock.EXPECT().DescribeEntity(gomock.Eq(place.ID)).Return(nil, &repo.NotFound{})
 
 				ctx := context.Background()
 
@@ -131,7 +159,7 @@ var _ = Describe("Api", func() {
 
 				_, err := apiInstance.DescribePlaceV1(ctx, &request)
 
-				gomega.Expect(err.Error() == "rpc error: code = NotFound desc = not found").To(gomega.BeTrue())
+				gomega.Expect(err.Error()).To(gomega.Equal("rpc error: code = NotFound desc = not found"))
 			})
 		})
 	})
@@ -141,7 +169,12 @@ var _ = Describe("Api", func() {
 			It("should return places", func() {
 				apiInstance := api.NewOvaPlaceApi(repoMock)
 
-				place := models.Place{ID: 1, UserID: 1, Memo: "Aero", Seat: "24G"}
+				place := models.Place{
+					ID:     1,
+					UserID: 1,
+					Memo:   "Aero",
+					Seat:   "24G",
+				}
 
 				gomock.InOrder(
 					repoMock.EXPECT().TotalCount().Return(uint64(1), nil),
@@ -151,19 +184,20 @@ var _ = Describe("Api", func() {
 				ctx := context.Background()
 
 				request := desc.ListPlacesRequestV1{
-					Page: 1, PerPage: 1,
+					Page:    1,
+					PerPage: 1,
 				}
 
 				response, err := apiInstance.ListPlacesV1(ctx, &request)
 
-				gomega.Expect(response.Places[0].UserId == place.UserID).To(gomega.BeTrue())
-				gomega.Expect(response.Places[0].Memo == place.Memo).To(gomega.BeTrue())
-				gomega.Expect(response.Places[0].Seat == place.Seat).To(gomega.BeTrue())
-				gomega.Expect(response.Places[0].PlaceId == place.ID).To(gomega.BeTrue())
-				gomega.Expect(response.Pagination.Page == uint64(1)).To(gomega.BeTrue())
-				gomega.Expect(response.Pagination.PerPage == uint64(1)).To(gomega.BeTrue())
-				gomega.Expect(response.Pagination.Total == uint64(1)).To(gomega.BeTrue())
-				gomega.Expect(err == nil).To(gomega.BeTrue())
+				gomega.Expect(response.Places[0].UserId).To(gomega.Equal(place.UserID))
+				gomega.Expect(response.Places[0].Memo).To(gomega.Equal(place.Memo))
+				gomega.Expect(response.Places[0].Seat).To(gomega.Equal(place.Seat))
+				gomega.Expect(response.Places[0].PlaceId).To(gomega.Equal(place.ID))
+				gomega.Expect(response.Pagination.Page).To(gomega.Equal(uint64(1)))
+				gomega.Expect(response.Pagination.PerPage).To(gomega.Equal(uint64(1)))
+				gomega.Expect(response.Pagination.Total).To(gomega.Equal(uint64(1)))
+				gomega.Expect(err).To(gomega.BeNil())
 			})
 		})
 
@@ -179,12 +213,13 @@ var _ = Describe("Api", func() {
 				ctx := context.Background()
 
 				request := desc.ListPlacesRequestV1{
-					Page: 1, PerPage: 1,
+					Page:    1,
+					PerPage: 1,
 				}
 
 				_, err := apiInstance.ListPlacesV1(ctx, &request)
 
-				gomega.Expect(err.Error() == "rpc error: code = Internal desc = internal error").To(gomega.BeTrue())
+				gomega.Expect(err.Error()).To(gomega.Equal("rpc error: code = Internal desc = internal error"))
 			})
 		})
 	})
@@ -194,7 +229,12 @@ var _ = Describe("Api", func() {
 			It("should return place", func() {
 				apiInstance := api.NewOvaPlaceApi(repoMock)
 
-				place := models.Place{ID: 1, UserID: 1, Memo: "Aero", Seat: "24G"}
+				place := models.Place{
+					ID:     1,
+					UserID: 1,
+					Memo:   "Aero",
+					Seat:   "24G",
+				}
 
 				repoMock.EXPECT().UpdateEntity(gomock.Eq(place.ID), gomock.Any()).Return(nil)
 
@@ -209,11 +249,11 @@ var _ = Describe("Api", func() {
 
 				response, err := apiInstance.UpdatePlaceV1(ctx, &request)
 
-				gomega.Expect(response.UserId == place.UserID).To(gomega.BeTrue())
-				gomega.Expect(response.Memo == place.Memo).To(gomega.BeTrue())
-				gomega.Expect(response.Seat == place.Seat).To(gomega.BeTrue())
-				gomega.Expect(response.PlaceId == place.ID).To(gomega.BeTrue())
-				gomega.Expect(err == nil).To(gomega.BeTrue())
+				gomega.Expect(response.UserId).To(gomega.Equal(place.UserID))
+				gomega.Expect(response.Memo).To(gomega.Equal(place.Memo))
+				gomega.Expect(response.Seat).To(gomega.Equal(place.Seat))
+				gomega.Expect(response.PlaceId).To(gomega.Equal(place.ID))
+				gomega.Expect(err).To(gomega.BeNil())
 			})
 		})
 
@@ -221,7 +261,12 @@ var _ = Describe("Api", func() {
 			It("should return error", func() {
 				apiInstance := api.NewOvaPlaceApi(repoMock)
 
-				place := models.Place{ID: 1, UserID: 1, Memo: "Aero", Seat: "24G"}
+				place := models.Place{
+					ID:     1,
+					UserID: 1,
+					Memo:   "Aero",
+					Seat:   "24G",
+				}
 
 				repoMock.EXPECT().UpdateEntity(gomock.Eq(place.ID), gomock.Any()).Return(errors.New("test error"))
 
@@ -236,7 +281,7 @@ var _ = Describe("Api", func() {
 
 				_, err := apiInstance.UpdatePlaceV1(ctx, &request)
 
-				gomega.Expect(err.Error() == "rpc error: code = Internal desc = internal error").To(gomega.BeTrue())
+				gomega.Expect(err.Error()).To(gomega.Equal("rpc error: code = Internal desc = internal error"))
 			})
 		})
 
@@ -244,9 +289,14 @@ var _ = Describe("Api", func() {
 			It("should return error", func() {
 				apiInstance := api.NewOvaPlaceApi(repoMock)
 
-				place := models.Place{ID: 1, UserID: 1, Memo: "Aero", Seat: "24G"}
+				place := models.Place{
+					ID:     1,
+					UserID: 1,
+					Memo:   "Aero",
+					Seat:   "24G",
+				}
 
-				repoMock.EXPECT().UpdateEntity(gomock.Eq(place.ID), gomock.Any()).Return(errors.New("no rows affected"))
+				repoMock.EXPECT().UpdateEntity(gomock.Eq(place.ID), gomock.Any()).Return(&repo.NotFound{})
 
 				ctx := context.Background()
 
@@ -259,7 +309,7 @@ var _ = Describe("Api", func() {
 
 				_, err := apiInstance.UpdatePlaceV1(ctx, &request)
 
-				gomega.Expect(err.Error() == "rpc error: code = NotFound desc = not found").To(gomega.BeTrue())
+				gomega.Expect(err.Error()).To(gomega.Equal("rpc error: code = NotFound desc = not found"))
 			})
 		})
 	})
@@ -269,7 +319,12 @@ var _ = Describe("Api", func() {
 			It("should not return error", func() {
 				apiInstance := api.NewOvaPlaceApi(repoMock)
 
-				place := models.Place{ID: 1, UserID: 1, Memo: "Aero", Seat: "24G"}
+				place := models.Place{
+					ID:     1,
+					UserID: 1,
+					Memo:   "Aero",
+					Seat:   "24G",
+				}
 
 				repoMock.EXPECT().RemoveEntity(gomock.Eq(place.ID)).Return(nil)
 
@@ -281,7 +336,7 @@ var _ = Describe("Api", func() {
 
 				_, err := apiInstance.RemovePlaceV1(ctx, &request)
 
-				gomega.Expect(err == nil).To(gomega.BeTrue())
+				gomega.Expect(err).To(gomega.BeNil())
 			})
 		})
 	})
@@ -290,7 +345,12 @@ var _ = Describe("Api", func() {
 		It("should return error", func() {
 			apiInstance := api.NewOvaPlaceApi(repoMock)
 
-			place := models.Place{ID: 1, UserID: 1, Memo: "Aero", Seat: "24G"}
+			place := models.Place{
+				ID:     1,
+				UserID: 1,
+				Memo:   "Aero",
+				Seat:   "24G",
+			}
 
 			repoMock.EXPECT().RemoveEntity(gomock.Eq(place.ID)).Return(errors.New("test error"))
 
@@ -302,7 +362,7 @@ var _ = Describe("Api", func() {
 
 			_, err := apiInstance.RemovePlaceV1(ctx, &request)
 
-			gomega.Expect(err.Error() == "rpc error: code = Internal desc = internal error").To(gomega.BeTrue())
+			gomega.Expect(err.Error()).To(gomega.Equal("rpc error: code = Internal desc = internal error"))
 		})
 	})
 
@@ -310,9 +370,14 @@ var _ = Describe("Api", func() {
 		It("should return error", func() {
 			apiInstance := api.NewOvaPlaceApi(repoMock)
 
-			place := models.Place{ID: 1, UserID: 1, Memo: "Aero", Seat: "24G"}
+			place := models.Place{
+				ID:     1,
+				UserID: 1,
+				Memo:   "Aero",
+				Seat:   "24G",
+			}
 
-			repoMock.EXPECT().RemoveEntity(gomock.Eq(place.ID)).Return(errors.New("no rows affected"))
+			repoMock.EXPECT().RemoveEntity(gomock.Eq(place.ID)).Return(&repo.NotFound{})
 
 			ctx := context.Background()
 
@@ -322,7 +387,7 @@ var _ = Describe("Api", func() {
 
 			_, err := apiInstance.RemovePlaceV1(ctx, &request)
 
-			gomega.Expect(err.Error() == "rpc error: code = NotFound desc = not found").To(gomega.BeTrue())
+			gomega.Expect(err.Error()).To(gomega.Equal("rpc error: code = NotFound desc = not found"))
 		})
 	})
 

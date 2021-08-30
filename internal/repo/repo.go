@@ -1,8 +1,8 @@
 package repo
 
 import (
+	"database/sql"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -38,7 +38,7 @@ func (r *repo) TotalCount() (uint64, error) {
 }
 
 func (r *repo) AddEntity(entity models.Place) (uint64, error) {
-	var id int
+	var id uint64
 	query, err := r.db.PrepareNamed(`INSERT INTO places (user_id,memo,seat) VALUES (:user_id,:memo,:seat) RETURNING id`)
 
 	if err != nil {
@@ -51,7 +51,7 @@ func (r *repo) AddEntity(entity models.Place) (uint64, error) {
 		return 0, err
 	}
 
-	return uint64(id), nil
+	return id, nil
 }
 
 func (r *repo) AddEntities(entities []models.Place) error {
@@ -75,7 +75,7 @@ func (r *repo) DescribeEntity(entityID uint64) (*models.Place, error) {
 	place := models.Place{}
 	err := r.db.Get(&place, "SELECT user_id, memo, seat FROM places WHERE id=$1", entityID)
 	if err != nil {
-		return nil, err
+		return nil, mapErrors(err)
 	}
 
 	return &place, nil
@@ -101,10 +101,10 @@ func (r *repo) UpdateEntity(entityID uint64, entity models.Place) error {
 	}
 
 	if count == 0 {
-		return errors.New("no rows affected")
+		return &NotFound{}
 	}
 
-	return err
+	return nil
 }
 
 func (r *repo) RemoveEntity(entityID uint64) error {
@@ -118,12 +118,19 @@ func (r *repo) RemoveEntity(entityID uint64) error {
 
 	count, err := res.RowsAffected()
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
 	if count == 0 {
-		return errors.New("no rows affected")
+		return &NotFound{}
+	}
+
+	return nil
+}
+
+func mapErrors(err error) error {
+	if errors.Is(err, sql.ErrNoRows) {
+		return &NotFound{}
 	}
 
 	return err

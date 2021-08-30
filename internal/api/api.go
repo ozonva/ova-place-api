@@ -2,6 +2,8 @@ package api
 
 import (
 	"context"
+	"errors"
+
 	"github.com/ozonva/ova-place-api/internal/models"
 	"github.com/ozonva/ova-place-api/internal/repo"
 	desc "github.com/ozonva/ova-place-api/pkg/ova-place-api"
@@ -42,7 +44,6 @@ func (a *api) CreatePlaceV1(
 	}
 
 	id, err := a.repo.AddEntity(model)
-
 	if err != nil {
 		return nil, status.Error(codes.Internal, "internal error")
 	}
@@ -69,12 +70,8 @@ func (a *api) DescribePlaceV1(
 		Msg("Describe place called")
 
 	place, err := a.repo.DescribeEntity(req.PlaceId)
-
 	if err != nil {
-		if err.Error() == "sql: no rows in result set" {
-			return nil, status.Error(codes.NotFound, "not found")
-		}
-		return nil, status.Error(codes.Internal, "internal error")
+		return nil, mapErrors(err)
 	}
 
 	return &desc.PlaceV1{
@@ -100,13 +97,11 @@ func (a *api) ListPlacesV1(
 		Msg("List place called")
 
 	totalCount, err := a.repo.TotalCount()
-
 	if err != nil {
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
 	fetched, err := a.repo.ListEntities(req.PerPage, req.PerPage*(req.Page-1))
-
 	if err != nil {
 		return nil, status.Error(codes.Internal, "internal error")
 	}
@@ -155,13 +150,8 @@ func (a *api) UpdatePlaceV1(
 	}
 
 	err := a.repo.UpdateEntity(req.PlaceId, model)
-
 	if err != nil {
-		if err.Error() == "no rows affected" {
-			return nil, status.Error(codes.NotFound, "not found")
-		}
-
-		return nil, status.Error(codes.Internal, "internal error")
+		return nil, mapErrors(err)
 	}
 
 	return &desc.PlaceV1{
@@ -186,14 +176,16 @@ func (a *api) RemovePlaceV1(
 		Msg("Remove place called")
 
 	err := a.repo.RemoveEntity(req.PlaceId)
-
 	if err != nil {
-		if err.Error() == "no rows affected" {
-			return nil, status.Error(codes.NotFound, "not found")
-		}
-
-		return nil, status.Error(codes.Internal, "internal error")
+		return nil, mapErrors(err)
 	}
 
 	return &emptypb.Empty{}, nil
+}
+
+func mapErrors(err error) error {
+	if errors.Is(err, &repo.NotFound{}) {
+		return status.Error(codes.NotFound, "not found")
+	}
+	return status.Error(codes.Internal, "internal error")
 }
