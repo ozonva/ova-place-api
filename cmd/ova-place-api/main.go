@@ -2,10 +2,23 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	"io"
 	"log"
 	"net"
+	"net/http"
 	"os"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"github.com/ozonva/ova-place-api/internal/metrics"
+	"github.com/ozonva/ova-place-api/internal/producer"
+
+	"github.com/opentracing/opentracing-go"
+
+	flusher "github.com/ozonva/ova-place-api/internal/flusher"
+	"github.com/ozonva/ova-place-api/internal/tracing"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"
@@ -17,34 +30,58 @@ import (
 	desc "github.com/ozonva/ova-place-api/pkg/ova-place-api"
 )
 
-const (
-	grpcPort = ":7002"
-)
-
-var (
-	grpcEndpoint = flag.String("grpc-server-endpoint", "0.0.0.0"+grpcPort, "gRPC server endpoint")
-)
-
-func runGrpc() error {
+func init() {
 	err := godotenv.Load("../.env")
 	if err != nil {
 		log.Fatalln(err)
 	}
+}
+
+func runGrpc() error {
+	grpcEndpoint := flag.String("grpc-server-endpoint", os.Getenv("GRPC_HOST")+os.Getenv("GRPC_PORT"), "gRPC server endpoint")
 
 	db, err := sqlx.Connect(os.Getenv("DB_DRIVER"), os.Getenv("DB_STRING"))
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	listen, err := net.Listen("tcp", grpcPort)
+	listen, err := net.Listen("tcp", os.Getenv("GRPC_PORT"))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	s := grpc.NewServer()
-	desc.RegisterOvaPlaceApiV1Server(s, api.NewOvaPlaceApi(repo.NewRepo(db)))
+	tracer, closer := tracing.Init("ova-place-api")
+	defer func(closer io.Closer) {
+		err := closer.Close()
+		if err != nil {
+			log.Fatalf("failed to init tracing: %v", err)
+		}
+	}(closer)
+	opentracing.SetGlobalTracer(tracer)
 
-	fmt.Printf("Server listening on %s\n", *grpcEndpoint)
+	s := grpc.NewServer()
+	repoInstance := repo.NewRepo(db)
+	flusherInstance := flusher.NewFlusher(2, repoInstance)
+	producerInstance := producer.NewProducer([]string{os.Getenv("KAFKA_BROKER_URL")})
+	defer producerInstance.Close()
+	cudCounterInstance := metrics.NewCudCounter(
+		promauto.NewCounter(prometheus.CounterOpts{
+			Name: "successful_creates",
+			Help: "The total number of successful_creates",
+		}),
+		promauto.NewCounter(prometheus.CounterOpts{
+			Name: "successful_updates",
+			Help: "The total number of successful_updates",
+		}),
+		promauto.NewCounter(prometheus.CounterOpts{
+			Name: "successful_deletes",
+			Help: "The total number of successful_deletes",
+		}),
+	)
+
+	desc.RegisterOvaPlaceApiV1Server(s, api.NewOvaPlaceApi(repoInstance, flusherInstance, producerInstance, cudCounterInstance))
+
+	log.Printf("Server listening on %s\n", *grpcEndpoint)
 	if err := s.Serve(listen); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
@@ -52,8 +89,18 @@ func runGrpc() error {
 	return nil
 }
 
+func runMetrics() {
+	http.Handle(os.Getenv("PROMETHEUS_PATH"), promhttp.Handler())
+	err := http.ListenAndServe(os.Getenv("PROMETHEUS_PORT"), nil)
+	if err != nil {
+		log.Fatalf("failed to init monitoring: %v", err)
+	}
+}
+
 func main() {
 	flag.Parse()
+
+	go runMetrics()
 
 	err := runGrpc()
 	if err != nil {

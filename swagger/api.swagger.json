@@ -74,6 +74,28 @@
         ]
       }
     },
+    "/v1/places/multi": {
+      "post": {
+        "operationId": "OvaPlaceApiV1_MultiCreatePlaceV1",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiMultiCreatePlaceResponseV1"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "OvaPlaceApiV1"
+        ]
+      }
+    },
     "/v1/places/{placeId}": {
       "get": {
         "operationId": "OvaPlaceApiV1_DescribePlaceV1",
@@ -165,6 +187,21 @@
     }
   },
   "definitions": {
+    "apiCreatePlaceRequestV1": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "seat": {
+          "type": "string"
+        },
+        "memo": {
+          "type": "string"
+        }
+      }
+    },
     "apiListPlacesResponseV1": {
       "type": "object",
       "properties": {
@@ -176,6 +213,17 @@
         },
         "pagination": {
           "$ref": "#/definitions/apiPaginationV1"
+        }
+      }
+    },
+    "apiMultiCreatePlaceResponseV1": {
+      "type": "object",
+      "properties": {
+        "notAdded": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/apiCreatePlaceRequestV1"
+          }
         }
       }
     },

@@ -15,6 +15,12 @@ service OvaPlaceApiV1 {
     };
   }
 
+  rpc MultiCreatePlaceV1(MultiCreatePlaceRequestV1) returns (MultiCreatePlaceResponseV1) {
+    option (google.api.http) = {
+      post: "/v1/places/multi"
+    };
+  }
+
   rpc DescribePlaceV1(DescribePlaceRequestV1) returns (PlaceV1) {
     option (google.api.http) = {
       get: "/v1/places/{place_id}"
@@ -44,6 +50,14 @@ message CreatePlaceRequestV1 {
   uint64 user_id = 1 [(validate.rules).uint64.gt = 0];
   string seat = 2 [(validate.rules).string = {min_len: 1, max_len: 255}];
   string memo = 3 [(validate.rules).string = {min_len: 1, max_len: 255}];
+}
+
+message MultiCreatePlaceRequestV1 {
+  repeated CreatePlaceRequestV1 places_creation_data = 1;
+}
+
+message MultiCreatePlaceResponseV1 {
+  repeated CreatePlaceRequestV1 not_added = 1;
 }
 
 message DescribePlaceRequestV1 {

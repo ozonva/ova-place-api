@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type OvaPlaceApiV1Client interface {
 	CreatePlaceV1(ctx context.Context, in *CreatePlaceRequestV1, opts ...grpc.CallOption) (*PlaceV1, error)
+	MultiCreatePlaceV1(ctx context.Context, in *MultiCreatePlaceRequestV1, opts ...grpc.CallOption) (*MultiCreatePlaceResponseV1, error)
 	DescribePlaceV1(ctx context.Context, in *DescribePlaceRequestV1, opts ...grpc.CallOption) (*PlaceV1, error)
 	ListPlacesV1(ctx context.Context, in *ListPlacesRequestV1, opts ...grpc.CallOption) (*ListPlacesResponseV1, error)
 	UpdatePlaceV1(ctx context.Context, in *UpdatePlaceRequestV1, opts ...grpc.CallOption) (*PlaceV1, error)
@@ -38,6 +39,15 @@ func NewOvaPlaceApiV1Client(cc grpc.ClientConnInterface) OvaPlaceApiV1Client {
 func (c *ovaPlaceApiV1Client) CreatePlaceV1(ctx context.Context, in *CreatePlaceRequestV1, opts ...grpc.CallOption) (*PlaceV1, error) {
 	out := new(PlaceV1)
 	err := c.cc.Invoke(ctx, "/ova.place.api.OvaPlaceApiV1/CreatePlaceV1", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ovaPlaceApiV1Client) MultiCreatePlaceV1(ctx context.Context, in *MultiCreatePlaceRequestV1, opts ...grpc.CallOption) (*MultiCreatePlaceResponseV1, error) {
+	out := new(MultiCreatePlaceResponseV1)
+	err := c.cc.Invoke(ctx, "/ova.place.api.OvaPlaceApiV1/MultiCreatePlaceV1", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -85,6 +95,7 @@ func (c *ovaPlaceApiV1Client) RemovePlaceV1(ctx context.Context, in *RemovePlace
 // for forward compatibility
 type OvaPlaceApiV1Server interface {
 	CreatePlaceV1(context.Context, *CreatePlaceRequestV1) (*PlaceV1, error)
+	MultiCreatePlaceV1(context.Context, *MultiCreatePlaceRequestV1) (*MultiCreatePlaceResponseV1, error)
 	DescribePlaceV1(context.Context, *DescribePlaceRequestV1) (*PlaceV1, error)
 	ListPlacesV1(context.Context, *ListPlacesRequestV1) (*ListPlacesResponseV1, error)
 	UpdatePlaceV1(context.Context, *UpdatePlaceRequestV1) (*PlaceV1, error)
@@ -98,6 +109,9 @@ type UnimplementedOvaPlaceApiV1Server struct {
 
 func (UnimplementedOvaPlaceApiV1Server) CreatePlaceV1(context.Context, *CreatePlaceRequestV1) (*PlaceV1, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreatePlaceV1 not implemented")
+}
+func (UnimplementedOvaPlaceApiV1Server) MultiCreatePlaceV1(context.Context, *MultiCreatePlaceRequestV1) (*MultiCreatePlaceResponseV1, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MultiCreatePlaceV1 not implemented")
 }
 func (UnimplementedOvaPlaceApiV1Server) DescribePlaceV1(context.Context, *DescribePlaceRequestV1) (*PlaceV1, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DescribePlaceV1 not implemented")
@@ -138,6 +152,24 @@ func _OvaPlaceApiV1_CreatePlaceV1_Handler(srv interface{}, ctx context.Context, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(OvaPlaceApiV1Server).CreatePlaceV1(ctx, req.(*CreatePlaceRequestV1))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _OvaPlaceApiV1_MultiCreatePlaceV1_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MultiCreatePlaceRequestV1)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OvaPlaceApiV1Server).MultiCreatePlaceV1(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ova.place.api.OvaPlaceApiV1/MultiCreatePlaceV1",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OvaPlaceApiV1Server).MultiCreatePlaceV1(ctx, req.(*MultiCreatePlaceRequestV1))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -224,6 +256,10 @@ var OvaPlaceApiV1_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreatePlaceV1",
 			Handler:    _OvaPlaceApiV1_CreatePlaceV1_Handler,
+		},
+		{
+			MethodName: "MultiCreatePlaceV1",
+			Handler:    _OvaPlaceApiV1_MultiCreatePlaceV1_Handler,
 		},
 		{
 			MethodName: "DescribePlaceV1",
