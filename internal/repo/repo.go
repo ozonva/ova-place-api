@@ -3,6 +3,7 @@ package repo
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -36,7 +37,7 @@ func (r *repo) TotalCount() (uint64, error) {
 	var count uint64
 	err := r.db.Get(&count, "SELECT count(1) FROM places")
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("cannot Get: %w", err)
 	}
 
 	return count, nil
@@ -48,13 +49,13 @@ func (r *repo) AddEntity(entity models.Place) (uint64, error) {
 	query, err := r.db.PrepareNamed(`INSERT INTO places (user_id,memo,seat) VALUES (:user_id,:memo,:seat) RETURNING id`)
 
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("cannot PrepareNamed: %w", err)
 	}
 
 	err = query.Get(&id, entity)
 
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("cannot Get: %w", err)
 	}
 
 	return id, nil
@@ -64,8 +65,11 @@ func (r *repo) AddEntity(entity models.Place) (uint64, error) {
 func (r *repo) AddEntities(entities []models.Place) error {
 	_, err := r.db.NamedExec(`INSERT INTO places (user_id, memo, seat)
         VALUES (:user_id, :memo, :seat)`, entities)
+	if err != nil {
+		return fmt.Errorf("cannot NamedExec: %w", err)
+	}
 
-	return err
+	return nil
 }
 
 // ListEntities returns places with a pagination
@@ -73,7 +77,7 @@ func (r *repo) ListEntities(limit, offset uint64) ([]models.Place, error) {
 	places := make([]models.Place, 0, limit)
 	err := r.db.Select(&places, "SELECT id, user_id, memo, seat FROM places ORDER BY id ASC LIMIT $1 OFFSET $2", limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot Select: %w", err)
 	}
 
 	return places, nil
@@ -84,7 +88,7 @@ func (r *repo) DescribeEntity(entityID uint64) (*models.Place, error) {
 	place := models.Place{}
 	err := r.db.Get(&place, "SELECT user_id, memo, seat FROM places WHERE id=$1", entityID)
 	if err != nil {
-		return nil, mapErrors(err)
+		return nil, mapErrors(fmt.Errorf("cannot Get: %w", err))
 	}
 
 	return &place, nil
@@ -102,12 +106,12 @@ func (r *repo) UpdateEntity(entityID uint64, entity models.Place) error {
 		})
 
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot NamedExec: %w", err)
 	}
 
 	count, err := res.RowsAffected()
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot RowsAffected: %w", err)
 	}
 
 	if count == 0 {
@@ -124,12 +128,12 @@ func (r *repo) RemoveEntity(entityID uint64) error {
 	})
 
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot NamedExec: %w", err)
 	}
 
 	count, err := res.RowsAffected()
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot RowsAffected: %w", err)
 	}
 
 	if count == 0 {

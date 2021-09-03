@@ -2,6 +2,7 @@ package event
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/ozonva/ova-place-api/internal/models"
 )
@@ -22,7 +23,7 @@ func NewEvent(eventType string, model models.Place) ([]byte, error) {
 	modelInBytes, err := json.Marshal(event)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot marshal the event: %w", err)
 	}
 
 	return modelInBytes, nil

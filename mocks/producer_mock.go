@@ -34,9 +34,11 @@ func (m *MockProducer) EXPECT() *MockProducerMockRecorder {
 }
 
 // Close mocks base method.
-func (m *MockProducer) Close() {
+func (m *MockProducer) Close() error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Close")
+	ret := m.ctrl.Call(m, "Close")
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // Close indicates an expected call of Close.

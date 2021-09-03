@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/ozonva/ova-place-api/internal/event"
 	"github.com/ozonva/ova-place-api/internal/metrics"
@@ -66,7 +67,7 @@ func (a *api) CreatePlaceV1(
 
 	id, err := a.repo.AddEntity(model)
 	if err != nil {
-		log.Error().Err(err).Msg("Error from api")
+		log.Error().Err(fmt.Errorf("cannot AddEntity: %w", err)).Msg("Error from api")
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
@@ -74,13 +75,13 @@ func (a *api) CreatePlaceV1(
 
 	eventInstance, err := event.NewEvent("created", model)
 	if err != nil {
-		log.Error().Err(err).Msg("Error from api")
+		log.Error().Err(fmt.Errorf("cannot NewEvent: %w", err)).Msg("Error from api")
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
 	err = a.producer.Push("cud_events", eventInstance)
 	if err != nil {
-		log.Error().Err(err).Msg("Error from api")
+		log.Error().Err(fmt.Errorf("cannot Push: %w", err)).Msg("Error from api")
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
@@ -120,13 +121,13 @@ func (a *api) MultiCreatePlaceV1(
 
 		eventInstance, err := event.NewEvent("create", places[index])
 		if err != nil {
-			log.Error().Err(err).Msg("Error from api")
+			log.Error().Err(fmt.Errorf("cannot NewEvent: %w", err)).Msg("Error from api")
 			return nil, status.Error(codes.Internal, "internal error")
 		}
 
 		err = a.producer.Push("cud_events", eventInstance)
 		if err != nil {
-			log.Error().Err(err).Msg("Error from api")
+			log.Error().Err(fmt.Errorf("cannot Push: %w", err)).Msg("Error from api")
 			return nil, status.Error(codes.Internal, "internal error")
 		}
 	}
@@ -165,7 +166,7 @@ func (a *api) DescribePlaceV1(
 
 	place, err := a.repo.DescribeEntity(req.PlaceId)
 	if err != nil {
-		log.Error().Err(err).Msg("Error from api")
+		log.Error().Err(fmt.Errorf("cannot DescribeEntity: %w", err)).Msg("Error from api")
 		return nil, mapErrors(err)
 	}
 
@@ -193,13 +194,13 @@ func (a *api) ListPlacesV1(
 
 	totalCount, err := a.repo.TotalCount()
 	if err != nil {
-		log.Error().Err(err).Msg("Error from api")
+		log.Error().Err(fmt.Errorf("cannot TotalCount: %w", err)).Msg("Error from api")
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
 	fetched, err := a.repo.ListEntities(req.PerPage, req.PerPage*(req.Page-1))
 	if err != nil {
-		log.Error().Err(err).Msg("Error from api")
+		log.Error().Err(fmt.Errorf("cannot ListEntities: %w", err)).Msg("Error from api")
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
@@ -248,19 +249,19 @@ func (a *api) UpdatePlaceV1(
 
 	err := a.repo.UpdateEntity(req.PlaceId, model)
 	if err != nil {
-		log.Error().Err(err).Msg("Error from api")
+		log.Error().Err(fmt.Errorf("cannot UpdateEntity: %w", err)).Msg("Error from api")
 		return nil, mapErrors(err)
 	}
 
 	eventInstance, err := event.NewEvent("updated", model)
 	if err != nil {
-		log.Error().Err(err).Msg("Error from api")
+		log.Error().Err(fmt.Errorf("cannot NewEvent: %w", err)).Msg("Error from api")
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
 	err = a.producer.Push("cud_events", eventInstance)
 	if err != nil {
-		log.Error().Err(err).Msg("Error from api")
+		log.Error().Err(fmt.Errorf("cannot Push: %w", err)).Msg("Error from api")
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
@@ -289,7 +290,7 @@ func (a *api) RemovePlaceV1(
 
 	model, err := a.repo.DescribeEntity(req.PlaceId)
 	if err != nil {
-		log.Error().Err(err).Msg("Error from api")
+		log.Error().Err(fmt.Errorf("cannot DescribeEntity: %w", err)).Msg("Error from api")
 		return nil, mapErrors(err)
 	}
 
@@ -301,13 +302,13 @@ func (a *api) RemovePlaceV1(
 
 	eventInstance, err := event.NewEvent("deleted", *model)
 	if err != nil {
-		log.Error().Err(err).Msg("Error from api")
+		log.Error().Err(fmt.Errorf("cannot NewEvent: %w", err)).Msg("Error from api")
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
 	err = a.producer.Push("cud_events", eventInstance)
 	if err != nil {
-		log.Error().Err(err).Msg("Error from api")
+		log.Error().Err(fmt.Errorf("cannot Push: %w", err)).Msg("Error from api")
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 

@@ -62,8 +62,18 @@ func runGrpc() error {
 	s := grpc.NewServer()
 	repoInstance := repo.NewRepo(db)
 	flusherInstance := flusher.NewFlusher(2, repoInstance)
-	producerInstance := producer.NewProducer([]string{os.Getenv("KAFKA_BROKER_URL")})
-	defer producerInstance.Close()
+	producerInstance, err := producer.NewProducer([]string{os.Getenv("KAFKA_BROKER_URL")})
+	if err != nil {
+		log.Fatalf("failed to init the producer: %v", err)
+	}
+
+	defer func(producerInstance producer.Producer) {
+		err := producerInstance.Close()
+		if err != nil {
+			log.Fatalf("failed to close the producer: %v", err)
+		}
+	}(producerInstance)
+
 	cudCounterInstance := metrics.NewCudCounter(
 		promauto.NewCounter(prometheus.CounterOpts{
 			Name: "successful_creates",
