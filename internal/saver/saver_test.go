@@ -1,6 +1,7 @@
 package saver_test
 
 import (
+	"context"
 	"time"
 
 	"github.com/golang/mock/gomock"
@@ -33,9 +34,9 @@ var _ = Describe("Saver", func() {
 	Describe("Save places", func() {
 		Context("close method is called before the saving timeout", func() {
 			It("saving occurs on close method calling", func() {
-				saverInstance := saver.NewSaver(2, time.Second*2, flusherMock)
+				saverInstance := saver.NewSaver(context.TODO(), 2, time.Second*2, flusherMock)
 
-				flusherMock.EXPECT().Flush(gomock.Eq(places[0:2])).Return([]models.Place{})
+				flusherMock.EXPECT().Flush(gomock.Any(), gomock.Eq(places[0:2])).Return([]models.Place{})
 
 				Expect(saverInstance.Save(places[0])).To(BeNil())
 				Expect(saverInstance.Save(places[1])).To(BeNil())
@@ -45,10 +46,10 @@ var _ = Describe("Saver", func() {
 
 		Context("close method is called after first saving timeout", func() {
 			It("saving one element occurs by timeout", func() {
-				saverInstance := saver.NewSaver(2, time.Millisecond*1, flusherMock)
+				saverInstance := saver.NewSaver(context.TODO(), 2, time.Millisecond*1, flusherMock)
 
-				flusherMock.EXPECT().Flush(gomock.Eq(places[0:1])).Return([]models.Place{})
-				flusherMock.EXPECT().Flush(gomock.Eq(places[1:2])).Return([]models.Place{})
+				flusherMock.EXPECT().Flush(gomock.Any(), gomock.Eq(places[0:1])).Return([]models.Place{})
+				flusherMock.EXPECT().Flush(gomock.Any(), gomock.Eq(places[1:2])).Return([]models.Place{})
 
 				Expect(saverInstance.Save(places[0])).To(BeNil())
 				time.Sleep(time.Millisecond * 4)
@@ -59,9 +60,9 @@ var _ = Describe("Saver", func() {
 
 		Context("the buffer is full", func() {
 			It("second save should return an error", func() {
-				saverInstance := saver.NewSaver(1, time.Second*2, flusherMock)
+				saverInstance := saver.NewSaver(context.TODO(), 1, time.Second*2, flusherMock)
 
-				flusherMock.EXPECT().Flush(gomock.Eq(places[0:1])).Return([]models.Place{})
+				flusherMock.EXPECT().Flush(gomock.Any(), gomock.Eq(places[0:1])).Return([]models.Place{})
 
 				Expect(saverInstance.Save(places[0])).To(BeNil())
 				Expect(saverInstance.Save(places[1])).To(Not(BeNil()))
@@ -71,9 +72,9 @@ var _ = Describe("Saver", func() {
 
 		Context("when closed, there are unsaved entities", func() {
 			It("close method calling should return an error", func() {
-				saverInstance := saver.NewSaver(2, time.Second*2, flusherMock)
+				saverInstance := saver.NewSaver(context.TODO(), 2, time.Second*2, flusherMock)
 
-				flusherMock.EXPECT().Flush(gomock.Eq(places[0:2])).Return(places[0:1])
+				flusherMock.EXPECT().Flush(gomock.Any(), gomock.Eq(places[0:2])).Return(places[0:1])
 
 				Expect(saverInstance.Save(places[0])).To(BeNil())
 				Expect(saverInstance.Save(places[1])).To(BeNil())
@@ -83,7 +84,7 @@ var _ = Describe("Saver", func() {
 
 		Context("when the call to the close method happens 2 times", func() {
 			It("not panics", func() {
-				saverInstance := saver.NewSaver(2, time.Second*2, flusherMock)
+				saverInstance := saver.NewSaver(context.TODO(), 2, time.Second*2, flusherMock)
 
 				Expect(saverInstance.Close()).To(BeNil())
 				Expect(saverInstance.Close()).To(BeNil())

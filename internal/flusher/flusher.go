@@ -1,6 +1,11 @@
 package flusher
 
 import (
+	"context"
+
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/ozonva/ova-place-api/internal/models"
 	"github.com/ozonva/ova-place-api/internal/repo"
 	"github.com/ozonva/ova-place-api/internal/utils"
@@ -8,7 +13,7 @@ import (
 
 // Flusher is an interface for dumping places to storage
 type Flusher interface {
-	Flush(places []models.Place) []models.Place
+	Flush(ctx context.Context, places []models.Place) []models.Place
 }
 
 // NewFlusher returns Flusher with batch saving support
@@ -31,7 +36,7 @@ type flusher struct {
 // Flush saves places in batches.
 // It returns nil when all places have been successfully saved.
 // It can return places, which have been not saved.
-func (f *flusher) Flush(places []models.Place) []models.Place {
+func (f *flusher) Flush(ctx context.Context, places []models.Place) []models.Place {
 
 	batches, err := utils.SplitPlacesToBatches(places, f.batchSize)
 
@@ -42,11 +47,17 @@ func (f *flusher) Flush(places []models.Place) []models.Place {
 	notAdded := make([]models.Place, 0, len(places))
 
 	for index := range batches {
+
+		span, _ := opentracing.StartSpanFromContext(ctx, "batch_save")
+		span.LogFields(log.Int("places_count", len(batches[index])))
+
 		err := f.entityRepo.AddEntities(batches[index])
 
 		if err != nil {
 			notAdded = append(notAdded, batches[index]...)
 		}
+
+		span.Finish()
 	}
 
 	if len(notAdded) == 0 {

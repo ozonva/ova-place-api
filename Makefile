@@ -68,3 +68,10 @@ bin-deps:
 	go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@v2.5.0
 	go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@v2.5.0
 	go install github.com/envoyproxy/protoc-gen-validate@$(PGV_VERSION)
+
+.PHONY: mocks
+mocks:
+	mockgen -destination=./mocks/flusher_mock.go -package=mocks github.com/ozonva/ova-place-api/internal/flusher Flusher
+	mockgen -destination=./mocks/repo_mock.go -package=mocks github.com/ozonva/ova-place-api/internal/repo Repo
+	mockgen -destination=./mocks/producer_mock.go -package=mocks github.com/ozonva/ova-place-api/internal/producer Producer
+	mockgen -destination=./mocks/counter_mock.go -package=mocks github.com/ozonva/ova-place-api/internal/metrics Counter

@@ -1,6 +1,7 @@
 package saver
 
 import (
+	"context"
 	"errors"
 	"sync"
 	"time"
@@ -20,6 +21,7 @@ type Saver interface {
 
 // NewSaver returns Saver.
 func NewSaver(
+	ctx context.Context,
 	capacity uint,
 	tickDuration time.Duration,
 	flusher flusher.Flusher,
@@ -28,6 +30,7 @@ func NewSaver(
 		done:     *utils.NewSyncChannel(),
 		entities: make([]models.Place, 0, capacity),
 		flusher:  flusher,
+		ctx:      ctx,
 	}
 
 	saver.init(tickDuration)
@@ -42,6 +45,7 @@ type saver struct {
 
 	done    utils.SyncChannel
 	flusher flusher.Flusher
+	ctx     context.Context
 }
 
 // Save adds models.Place to the buffer.
@@ -109,7 +113,7 @@ func (s *saver) flush() error {
 		return nil
 	}
 
-	unsaved := s.flusher.Flush(s.entities)
+	unsaved := s.flusher.Flush(s.ctx, s.entities)
 
 	if len(unsaved) > 0 {
 		copy(s.entities, unsaved)

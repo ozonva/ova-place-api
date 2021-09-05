@@ -1,6 +1,7 @@
 package flusher_test
 
 import (
+	"context"
 	"errors"
 
 	"github.com/golang/mock/gomock"
@@ -40,7 +41,7 @@ var _ = Describe("Flusher", func() {
 					repoMock.EXPECT().AddEntities(gomock.Eq(places[2:4])).Return(nil),
 				)
 
-				Expect(flusherInstance.Flush(places) == nil).To(BeTrue())
+				Expect(flusherInstance.Flush(context.TODO(), places) == nil).To(BeTrue())
 			})
 		})
 
@@ -53,7 +54,7 @@ var _ = Describe("Flusher", func() {
 					repoMock.EXPECT().AddEntities(gomock.Eq(places[3:4])).Return(nil),
 				)
 
-				Expect(flusherInstance.Flush(places) == nil).To(BeTrue())
+				Expect(flusherInstance.Flush(context.TODO(), places) == nil).To(BeTrue())
 			})
 		})
 
@@ -61,7 +62,7 @@ var _ = Describe("Flusher", func() {
 			It("should return all inputted places", func() {
 				flusherInstance := flusher.NewFlusher(0, repoMock)
 
-				Expect(flusherInstance.Flush(places)).To(Equal(places))
+				Expect(flusherInstance.Flush(context.TODO(), places)).To(Equal(places))
 			})
 		})
 
@@ -74,7 +75,7 @@ var _ = Describe("Flusher", func() {
 					repoMock.EXPECT().AddEntities(gomock.Eq(places[2:4])).Return(errors.New("some error")),
 				)
 
-				Expect(flusherInstance.Flush(places)).To(Equal(places))
+				Expect(flusherInstance.Flush(context.TODO(), places)).To(Equal(places))
 			})
 		})
 
@@ -87,7 +88,7 @@ var _ = Describe("Flusher", func() {
 					repoMock.EXPECT().AddEntities(gomock.Eq(places[2:4])).Return(nil),
 				)
 
-				Expect(flusherInstance.Flush(places)).To(Equal(places[0:2]))
+				Expect(flusherInstance.Flush(context.TODO(), places)).To(Equal(places[0:2]))
 			})
 		})
 	})
