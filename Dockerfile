@@ -16,7 +16,7 @@ COPY . .
 RUN make bin-deps
 RUN make
 
-EXPOSE 9000 7002
+EXPOSE 9000 7002 8080
 
 WORKDIR /app/bin
 

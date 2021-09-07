@@ -5,19 +5,18 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ozonva/ova-place-api/internal/event"
-	"github.com/ozonva/ova-place-api/internal/metrics"
-	"github.com/ozonva/ova-place-api/internal/producer"
-
-	"github.com/ozonva/ova-place-api/internal/flusher"
+	"github.com/rs/zerolog"
 
 	"github.com/opentracing/opentracing-go"
-	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/ozonva/ova-place-api/internal/event"
+	"github.com/ozonva/ova-place-api/internal/flusher"
+	"github.com/ozonva/ova-place-api/internal/metrics"
 	"github.com/ozonva/ova-place-api/internal/models"
+	"github.com/ozonva/ova-place-api/internal/producer"
 	"github.com/ozonva/ova-place-api/internal/repo"
 	desc "github.com/ozonva/ova-place-api/pkg/ova-place-api"
 )
@@ -28,19 +27,23 @@ type api struct {
 	flusher    flusher.Flusher
 	producer   producer.Producer
 	cudCounter metrics.CudCounter
+	logger     zerolog.Logger
 }
 
-func NewOvaPlaceApi(
+// NewOvaPlaceAPI returns desc.OvaPlaceApiV1Server instance.
+func NewOvaPlaceAPI(
 	repo repo.Repo,
 	flusher flusher.Flusher,
 	producer producer.Producer,
 	cudCounter metrics.CudCounter,
+	logger zerolog.Logger,
 ) desc.OvaPlaceApiV1Server {
 	return &api{
 		repo:       repo,
 		flusher:    flusher,
 		producer:   producer,
 		cudCounter: cudCounter,
+		logger:     logger,
 	}
 }
 
@@ -53,7 +56,7 @@ func (a *api) CreatePlaceV1(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	log.Debug().
+	a.logger.Debug().
 		Uint64("UserId", req.UserId).
 		Str("Seat", req.Seat).
 		Str("Memo", req.Memo).
@@ -65,9 +68,9 @@ func (a *api) CreatePlaceV1(
 		UserID: req.UserId,
 	}
 
-	id, err := a.repo.AddEntity(model)
+	id, err := a.repo.AddEntity(ctx, model)
 	if err != nil {
-		log.Error().Err(fmt.Errorf("cannot AddEntity: %w", err)).Msg("Error from api")
+		a.logger.Error().Err(fmt.Errorf("cannot AddEntity: %w", err)).Msg("Error from api")
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
@@ -75,13 +78,13 @@ func (a *api) CreatePlaceV1(
 
 	eventInstance, err := event.NewEvent("created", model)
 	if err != nil {
-		log.Error().Err(fmt.Errorf("cannot NewEvent: %w", err)).Msg("Error from api")
+		a.logger.Error().Err(fmt.Errorf("cannot NewEvent: %w", err)).Msg("Error from api")
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
-	err = a.producer.Push("cud_events", eventInstance)
+	err = a.producer.Push(ctx, "cud_events", eventInstance)
 	if err != nil {
-		log.Error().Err(fmt.Errorf("cannot Push: %w", err)).Msg("Error from api")
+		a.logger.Error().Err(fmt.Errorf("cannot Push: %w", err)).Msg("Error from api")
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
@@ -107,7 +110,7 @@ func (a *api) MultiCreatePlaceV1(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	log.Debug().
+	a.logger.Debug().
 		Msg("Multi create place called")
 
 	places := make([]models.Place, len(req.PlacesCreationData))
@@ -121,13 +124,13 @@ func (a *api) MultiCreatePlaceV1(
 
 		eventInstance, err := event.NewEvent("create", places[index])
 		if err != nil {
-			log.Error().Err(fmt.Errorf("cannot NewEvent: %w", err)).Msg("Error from api")
+			a.logger.Error().Err(fmt.Errorf("cannot NewEvent: %w", err)).Msg("Error from api")
 			return nil, status.Error(codes.Internal, "internal error")
 		}
 
-		err = a.producer.Push("cud_events", eventInstance)
+		err = a.producer.Push(ctx, "cud_events", eventInstance)
 		if err != nil {
-			log.Error().Err(fmt.Errorf("cannot Push: %w", err)).Msg("Error from api")
+			a.logger.Error().Err(fmt.Errorf("cannot Push: %w", err)).Msg("Error from api")
 			return nil, status.Error(codes.Internal, "internal error")
 		}
 	}
@@ -160,13 +163,13 @@ func (a *api) DescribePlaceV1(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	log.Debug().
+	a.logger.Debug().
 		Uint64("PlaceId", req.PlaceId).
 		Msg("Describe place called")
 
-	place, err := a.repo.DescribeEntity(req.PlaceId)
+	place, err := a.repo.DescribeEntity(ctx, req.PlaceId)
 	if err != nil {
-		log.Error().Err(fmt.Errorf("cannot DescribeEntity: %w", err)).Msg("Error from api")
+		a.logger.Error().Err(fmt.Errorf("cannot DescribeEntity: %w", err)).Msg("Error from api")
 		return nil, mapErrors(err)
 	}
 
@@ -187,20 +190,20 @@ func (a *api) ListPlacesV1(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	log.Debug().
+	a.logger.Debug().
 		Uint64("Page", req.Page).
 		Uint64("PerPage", req.PerPage).
 		Msg("List place called")
 
-	totalCount, err := a.repo.TotalCount()
+	totalCount, err := a.repo.TotalCount(ctx)
 	if err != nil {
-		log.Error().Err(fmt.Errorf("cannot TotalCount: %w", err)).Msg("Error from api")
+		a.logger.Error().Err(fmt.Errorf("cannot TotalCount: %w", err)).Msg("Error from api")
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
-	fetched, err := a.repo.ListEntities(req.PerPage, req.PerPage*(req.Page-1))
+	fetched, err := a.repo.ListEntities(ctx, req.PerPage, req.PerPage*(req.Page-1))
 	if err != nil {
-		log.Error().Err(fmt.Errorf("cannot ListEntities: %w", err)).Msg("Error from api")
+		a.logger.Error().Err(fmt.Errorf("cannot ListEntities: %w", err)).Msg("Error from api")
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
@@ -234,7 +237,7 @@ func (a *api) UpdatePlaceV1(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	log.Debug().
+	a.logger.Debug().
 		Uint64("UserId", req.UserId).
 		Uint64("PlaceId", req.PlaceId).
 		Str("Seat", req.Seat).
@@ -247,21 +250,21 @@ func (a *api) UpdatePlaceV1(
 		UserID: req.UserId,
 	}
 
-	err := a.repo.UpdateEntity(req.PlaceId, model)
+	err := a.repo.UpdateEntity(ctx, req.PlaceId, model)
 	if err != nil {
-		log.Error().Err(fmt.Errorf("cannot UpdateEntity: %w", err)).Msg("Error from api")
+		a.logger.Error().Err(fmt.Errorf("cannot UpdateEntity: %w", err)).Msg("Error from api")
 		return nil, mapErrors(err)
 	}
 
 	eventInstance, err := event.NewEvent("updated", model)
 	if err != nil {
-		log.Error().Err(fmt.Errorf("cannot NewEvent: %w", err)).Msg("Error from api")
+		a.logger.Error().Err(fmt.Errorf("cannot NewEvent: %w", err)).Msg("Error from api")
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
-	err = a.producer.Push("cud_events", eventInstance)
+	err = a.producer.Push(ctx, "cud_events", eventInstance)
 	if err != nil {
-		log.Error().Err(fmt.Errorf("cannot Push: %w", err)).Msg("Error from api")
+		a.logger.Error().Err(fmt.Errorf("cannot Push: %w", err)).Msg("Error from api")
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
@@ -284,31 +287,31 @@ func (a *api) RemovePlaceV1(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	log.Debug().
+	a.logger.Debug().
 		Uint64("PlaceId", req.PlaceId).
 		Msg("Remove place called")
 
-	model, err := a.repo.DescribeEntity(req.PlaceId)
+	model, err := a.repo.DescribeEntity(ctx, req.PlaceId)
 	if err != nil {
-		log.Error().Err(fmt.Errorf("cannot DescribeEntity: %w", err)).Msg("Error from api")
+		a.logger.Error().Err(fmt.Errorf("cannot DescribeEntity: %w", err)).Msg("Error from api")
 		return nil, mapErrors(err)
 	}
 
-	err = a.repo.RemoveEntity(req.PlaceId)
+	err = a.repo.RemoveEntity(ctx, req.PlaceId)
 	if err != nil {
-		log.Error().Err(err).Msg("Error from api")
+		a.logger.Error().Err(err).Msg("Error from api")
 		return nil, mapErrors(err)
 	}
 
 	eventInstance, err := event.NewEvent("deleted", *model)
 	if err != nil {
-		log.Error().Err(fmt.Errorf("cannot NewEvent: %w", err)).Msg("Error from api")
+		a.logger.Error().Err(fmt.Errorf("cannot NewEvent: %w", err)).Msg("Error from api")
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
-	err = a.producer.Push("cud_events", eventInstance)
+	err = a.producer.Push(ctx, "cud_events", eventInstance)
 	if err != nil {
-		log.Error().Err(fmt.Errorf("cannot Push: %w", err)).Msg("Error from api")
+		a.logger.Error().Err(fmt.Errorf("cannot Push: %w", err)).Msg("Error from api")
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
