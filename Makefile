@@ -20,7 +20,7 @@ test: ## Run tests
 
 .PHONY: lint
 lint: ## Lint the source files
-	golangci-lint run --timeout 5m -E golint -e '(struct field|type|method|func) [a-zA-Z`]+ should be [a-zA-Z`]+'
+	golangci-lint run
 	gosec -quiet ./...
 
 .PHONY: fmt

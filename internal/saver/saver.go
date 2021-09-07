@@ -3,13 +3,15 @@ package saver
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
-	"github.com/ozonva/ova-place-api/internal/utils"
+	"github.com/rs/zerolog/log"
 
 	"github.com/ozonva/ova-place-api/internal/flusher"
 	"github.com/ozonva/ova-place-api/internal/models"
+	"github.com/ozonva/ova-place-api/internal/utils"
 )
 
 // Saver is an interface for models.Place periodic saving.
@@ -94,7 +96,10 @@ func (s *saver) init(tickDuration time.Duration) {
 
 				return
 			case <-ticker.C:
-				s.flush() // todo log
+				err := s.flush()
+				if err != nil {
+					log.Err(fmt.Errorf("cannot flush: %w", err)).Msg("Error from saver")
+				}
 			}
 		}
 	}(s, ticker)

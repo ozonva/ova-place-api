@@ -11,12 +11,12 @@ import (
 	"github.com/ozonva/ova-place-api/internal/utils"
 )
 
-// Flusher is an interface for dumping places to storage
+// Flusher is an interface for dumping places to storage.
 type Flusher interface {
 	Flush(ctx context.Context, places []models.Place) []models.Place
 }
 
-// NewFlusher returns Flusher with batch saving support
+// NewFlusher returns Flusher with batch saving support.
 func NewFlusher(
 	batchSize int,
 	entityRepo repo.Repo,
@@ -27,7 +27,7 @@ func NewFlusher(
 	}
 }
 
-// flusher is a Flusher implementation
+// flusher is a Flusher implementation.
 type flusher struct {
 	batchSize  int
 	entityRepo repo.Repo
@@ -51,7 +51,7 @@ func (f *flusher) Flush(ctx context.Context, places []models.Place) []models.Pla
 		span, _ := opentracing.StartSpanFromContext(ctx, "batch_save")
 		span.LogFields(log.Int("places_count", len(batches[index])))
 
-		err := f.entityRepo.AddEntities(batches[index])
+		err := f.entityRepo.AddEntities(ctx, batches[index])
 
 		if err != nil {
 			notAdded = append(notAdded, batches[index]...)

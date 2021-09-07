@@ -7,13 +7,13 @@ import (
 	"github.com/ozonva/ova-place-api/internal/models"
 )
 
-// Event keeps its own type and place model
+// Event keeps its own type and place model.
 type Event struct {
 	EventType string       `json:"event_type"`
 	Place     models.Place `json:"place"`
 }
 
-// NewEvent returns Event in bytes
+// NewEvent returns Event in bytes.
 func NewEvent(eventType string, model models.Place) ([]byte, error) {
 	event := Event{
 		EventType: eventType,

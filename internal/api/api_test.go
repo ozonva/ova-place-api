@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/rs/zerolog"
+
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
@@ -23,6 +25,7 @@ var _ = Describe("Api", func() {
 		producerMock *mocks.MockProducer
 		counterMock  *mocks.MockCounter
 		cudCounter   metrics.CudCounter
+		ctx          context.Context
 	)
 
 	BeforeEach(func() {
@@ -32,13 +35,14 @@ var _ = Describe("Api", func() {
 		producerMock = mocks.NewMockProducer(ctrl)
 		counterMock = mocks.NewMockCounter(ctrl)
 		cudCounter = metrics.NewCudCounter(counterMock, counterMock, counterMock)
+		ctx = context.TODO()
 		defer ctrl.Finish()
 	})
 
 	Describe("Creates place", func() {
 		Context("all is ok", func() {
 			It("should return place", func() {
-				apiInstance := api.NewOvaPlaceApi(repoMock, flusherMock, producerMock, cudCounter)
+				apiInstance := api.NewOvaPlaceAPI(repoMock, flusherMock, producerMock, cudCounter, zerolog.Logger{})
 
 				place := models.Place{
 					UserID: 1,
@@ -47,12 +51,10 @@ var _ = Describe("Api", func() {
 				}
 
 				gomock.InOrder(
-					repoMock.EXPECT().AddEntity(gomock.Eq(place)).Return(uint64(1), nil),
-					producerMock.EXPECT().Push(gomock.Eq("cud_events"), gomock.Any()),
+					repoMock.EXPECT().AddEntity(ctx, gomock.Eq(place)).Return(uint64(1), nil),
+					producerMock.EXPECT().Push(ctx, gomock.Eq("cud_events"), gomock.Any()),
 					counterMock.EXPECT().Inc(),
 				)
-
-				ctx := context.TODO()
 
 				request := desc.CreatePlaceRequestV1{
 					UserId: place.UserID,
@@ -72,7 +74,7 @@ var _ = Describe("Api", func() {
 
 		Context("repo returns error", func() {
 			It("should return internal error", func() {
-				apiInstance := api.NewOvaPlaceApi(repoMock, flusherMock, producerMock, cudCounter)
+				apiInstance := api.NewOvaPlaceAPI(repoMock, flusherMock, producerMock, cudCounter, zerolog.Logger{})
 
 				place := models.Place{
 					UserID: 1,
@@ -80,9 +82,7 @@ var _ = Describe("Api", func() {
 					Seat:   "24G",
 				}
 
-				repoMock.EXPECT().AddEntity(gomock.Eq(place)).Return(uint64(0), errors.New("test error"))
-
-				ctx := context.TODO()
+				repoMock.EXPECT().AddEntity(ctx, gomock.Eq(place)).Return(uint64(0), errors.New("test error"))
 
 				request := desc.CreatePlaceRequestV1{
 					UserId: place.UserID,
@@ -100,17 +100,15 @@ var _ = Describe("Api", func() {
 	Describe("Multi creates place", func() {
 		Context("all is ok", func() {
 			It("should not return error", func() {
-				apiInstance := api.NewOvaPlaceApi(repoMock, flusherMock, producerMock, cudCounter)
+				apiInstance := api.NewOvaPlaceAPI(repoMock, flusherMock, producerMock, cudCounter, zerolog.Logger{})
 
 				places := []models.Place{
 					{UserID: 1, Memo: "Aero", Seat: "24G"},
 					{UserID: 1, Memo: "Bus", Seat: "34"},
 				}
 
-				ctx := context.TODO()
-
 				gomock.InOrder(
-					producerMock.EXPECT().Push(gomock.Eq("cud_events"), gomock.Any()).Times(2),
+					producerMock.EXPECT().Push(gomock.Any(), gomock.Eq("cud_events"), gomock.Any()).Times(2),
 					flusherMock.EXPECT().Flush(gomock.Any(), gomock.Eq(places)).Return([]models.Place{}),
 					counterMock.EXPECT().Add(float64(2)),
 				)
@@ -138,7 +136,7 @@ var _ = Describe("Api", func() {
 
 		Context("flusher returns not saved places", func() {
 			It("should return not saved places", func() {
-				apiInstance := api.NewOvaPlaceApi(repoMock, flusherMock, producerMock, cudCounter)
+				apiInstance := api.NewOvaPlaceAPI(repoMock, flusherMock, producerMock, cudCounter, zerolog.Logger{})
 
 				places := []models.Place{
 					{UserID: 1, Memo: "Aero", Seat: "24G"},
@@ -146,14 +144,12 @@ var _ = Describe("Api", func() {
 				}
 
 				gomock.InOrder(
-					producerMock.EXPECT().Push(gomock.Eq("cud_events"), gomock.Any()).Times(2),
+					producerMock.EXPECT().Push(gomock.Any(), gomock.Eq("cud_events"), gomock.Any()).Times(2),
 					flusherMock.EXPECT().Flush(gomock.Any(), gomock.Eq(places)).Return([]models.Place{
 						places[1],
 					}),
 					counterMock.EXPECT().Add(float64(1)),
 				)
-
-				ctx := context.TODO()
 
 				request := desc.MultiCreatePlaceRequestV1{
 					PlacesCreationData: []*desc.CreatePlaceRequestV1{
@@ -183,7 +179,7 @@ var _ = Describe("Api", func() {
 	Describe("Describes place", func() {
 		Context("all is ok", func() {
 			It("should return place", func() {
-				apiInstance := api.NewOvaPlaceApi(repoMock, flusherMock, producerMock, cudCounter)
+				apiInstance := api.NewOvaPlaceAPI(repoMock, flusherMock, producerMock, cudCounter, zerolog.Logger{})
 
 				place := models.Place{
 					ID:     1,
@@ -192,9 +188,7 @@ var _ = Describe("Api", func() {
 					Seat:   "24G",
 				}
 
-				repoMock.EXPECT().DescribeEntity(gomock.Eq(place.ID)).Return(&place, nil)
-
-				ctx := context.TODO()
+				repoMock.EXPECT().DescribeEntity(ctx, gomock.Eq(place.ID)).Return(&place, nil)
 
 				request := desc.DescribePlaceRequestV1{
 					PlaceId: place.ID,
@@ -212,7 +206,7 @@ var _ = Describe("Api", func() {
 
 		Context("repo returns error", func() {
 			It("should return error", func() {
-				apiInstance := api.NewOvaPlaceApi(repoMock, flusherMock, producerMock, cudCounter)
+				apiInstance := api.NewOvaPlaceAPI(repoMock, flusherMock, producerMock, cudCounter, zerolog.Logger{})
 
 				place := models.Place{
 					ID:     1,
@@ -221,9 +215,7 @@ var _ = Describe("Api", func() {
 					Seat:   "24G",
 				}
 
-				repoMock.EXPECT().DescribeEntity(gomock.Eq(place.ID)).Return(nil, errors.New("test error"))
-
-				ctx := context.TODO()
+				repoMock.EXPECT().DescribeEntity(ctx, gomock.Eq(place.ID)).Return(nil, errors.New("test error"))
 
 				request := desc.DescribePlaceRequestV1{
 					PlaceId: place.ID,
@@ -237,7 +229,7 @@ var _ = Describe("Api", func() {
 
 		Context("row not found", func() {
 			It("should return error", func() {
-				apiInstance := api.NewOvaPlaceApi(repoMock, flusherMock, producerMock, cudCounter)
+				apiInstance := api.NewOvaPlaceAPI(repoMock, flusherMock, producerMock, cudCounter, zerolog.Logger{})
 
 				place := models.Place{
 					ID:     1,
@@ -246,9 +238,7 @@ var _ = Describe("Api", func() {
 					Seat:   "24G",
 				}
 
-				repoMock.EXPECT().DescribeEntity(gomock.Eq(place.ID)).Return(nil, &repo.NotFound{})
-
-				ctx := context.TODO()
+				repoMock.EXPECT().DescribeEntity(ctx, gomock.Eq(place.ID)).Return(nil, &repo.NotFound{})
 
 				request := desc.DescribePlaceRequestV1{
 					PlaceId: place.ID,
@@ -264,7 +254,7 @@ var _ = Describe("Api", func() {
 	Describe("Lists places", func() {
 		Context("all is ok", func() {
 			It("should return places", func() {
-				apiInstance := api.NewOvaPlaceApi(repoMock, flusherMock, producerMock, cudCounter)
+				apiInstance := api.NewOvaPlaceAPI(repoMock, flusherMock, producerMock, cudCounter, zerolog.Logger{})
 
 				place := models.Place{
 					ID:     1,
@@ -274,11 +264,9 @@ var _ = Describe("Api", func() {
 				}
 
 				gomock.InOrder(
-					repoMock.EXPECT().TotalCount().Return(uint64(1), nil),
-					repoMock.EXPECT().ListEntities(uint64(1), uint64(0)).Return([]models.Place{place}, nil),
+					repoMock.EXPECT().TotalCount(ctx).Return(uint64(1), nil),
+					repoMock.EXPECT().ListEntities(ctx, uint64(1), uint64(0)).Return([]models.Place{place}, nil),
 				)
-
-				ctx := context.TODO()
 
 				request := desc.ListPlacesRequestV1{
 					Page:    1,
@@ -300,14 +288,12 @@ var _ = Describe("Api", func() {
 
 		Context("repo returns error", func() {
 			It("should return error", func() {
-				apiInstance := api.NewOvaPlaceApi(repoMock, flusherMock, producerMock, cudCounter)
+				apiInstance := api.NewOvaPlaceAPI(repoMock, flusherMock, producerMock, cudCounter, zerolog.Logger{})
 
 				gomock.InOrder(
-					repoMock.EXPECT().TotalCount().Return(uint64(1), nil),
-					repoMock.EXPECT().ListEntities(uint64(1), uint64(0)).Return(nil, errors.New("test error")),
+					repoMock.EXPECT().TotalCount(ctx).Return(uint64(1), nil),
+					repoMock.EXPECT().ListEntities(ctx, uint64(1), uint64(0)).Return(nil, errors.New("test error")),
 				)
-
-				ctx := context.TODO()
 
 				request := desc.ListPlacesRequestV1{
 					Page:    1,
@@ -324,7 +310,7 @@ var _ = Describe("Api", func() {
 	Describe("Updates place", func() {
 		Context("all is ok", func() {
 			It("should return place", func() {
-				apiInstance := api.NewOvaPlaceApi(repoMock, flusherMock, producerMock, cudCounter)
+				apiInstance := api.NewOvaPlaceAPI(repoMock, flusherMock, producerMock, cudCounter, zerolog.Logger{})
 
 				place := models.Place{
 					ID:     1,
@@ -334,12 +320,10 @@ var _ = Describe("Api", func() {
 				}
 
 				gomock.InOrder(
-					repoMock.EXPECT().UpdateEntity(gomock.Eq(place.ID), gomock.Any()).Return(nil),
-					producerMock.EXPECT().Push(gomock.Eq("cud_events"), gomock.Any()),
+					repoMock.EXPECT().UpdateEntity(ctx, gomock.Eq(place.ID), gomock.Any()).Return(nil),
+					producerMock.EXPECT().Push(ctx, gomock.Eq("cud_events"), gomock.Any()),
 					counterMock.EXPECT().Inc(),
 				)
-
-				ctx := context.TODO()
 
 				request := desc.UpdatePlaceRequestV1{
 					PlaceId: place.ID,
@@ -360,7 +344,7 @@ var _ = Describe("Api", func() {
 
 		Context("repo returns error", func() {
 			It("should return error", func() {
-				apiInstance := api.NewOvaPlaceApi(repoMock, flusherMock, producerMock, cudCounter)
+				apiInstance := api.NewOvaPlaceAPI(repoMock, flusherMock, producerMock, cudCounter, zerolog.Logger{})
 
 				place := models.Place{
 					ID:     1,
@@ -369,9 +353,7 @@ var _ = Describe("Api", func() {
 					Seat:   "24G",
 				}
 
-				repoMock.EXPECT().UpdateEntity(gomock.Eq(place.ID), gomock.Any()).Return(errors.New("test error"))
-
-				ctx := context.TODO()
+				repoMock.EXPECT().UpdateEntity(ctx, gomock.Eq(place.ID), gomock.Any()).Return(errors.New("test error"))
 
 				request := desc.UpdatePlaceRequestV1{
 					PlaceId: place.ID,
@@ -388,7 +370,7 @@ var _ = Describe("Api", func() {
 
 		Context("row not found", func() {
 			It("should return error", func() {
-				apiInstance := api.NewOvaPlaceApi(repoMock, flusherMock, producerMock, cudCounter)
+				apiInstance := api.NewOvaPlaceAPI(repoMock, flusherMock, producerMock, cudCounter, zerolog.Logger{})
 
 				place := models.Place{
 					ID:     1,
@@ -397,9 +379,7 @@ var _ = Describe("Api", func() {
 					Seat:   "24G",
 				}
 
-				repoMock.EXPECT().UpdateEntity(gomock.Eq(place.ID), gomock.Any()).Return(&repo.NotFound{})
-
-				ctx := context.TODO()
+				repoMock.EXPECT().UpdateEntity(ctx, gomock.Eq(place.ID), gomock.Any()).Return(&repo.NotFound{})
 
 				request := desc.UpdatePlaceRequestV1{
 					PlaceId: place.ID,
@@ -418,7 +398,7 @@ var _ = Describe("Api", func() {
 	Describe("Deletes place", func() {
 		Context("all is ok", func() {
 			It("should not return error", func() {
-				apiInstance := api.NewOvaPlaceApi(repoMock, flusherMock, producerMock, cudCounter)
+				apiInstance := api.NewOvaPlaceAPI(repoMock, flusherMock, producerMock, cudCounter, zerolog.Logger{})
 
 				place := models.Place{
 					ID:     1,
@@ -428,13 +408,11 @@ var _ = Describe("Api", func() {
 				}
 
 				gomock.InOrder(
-					repoMock.EXPECT().DescribeEntity(gomock.Eq(place.ID)).Return(&place, nil),
-					repoMock.EXPECT().RemoveEntity(gomock.Eq(place.ID)).Return(nil),
-					producerMock.EXPECT().Push(gomock.Eq("cud_events"), gomock.Any()),
+					repoMock.EXPECT().DescribeEntity(ctx, gomock.Eq(place.ID)).Return(&place, nil),
+					repoMock.EXPECT().RemoveEntity(ctx, gomock.Eq(place.ID)).Return(nil),
+					producerMock.EXPECT().Push(ctx, gomock.Eq("cud_events"), gomock.Any()),
 					counterMock.EXPECT().Inc(),
 				)
-
-				ctx := context.TODO()
 
 				request := desc.RemovePlaceRequestV1{
 					PlaceId: place.ID,
@@ -449,7 +427,7 @@ var _ = Describe("Api", func() {
 
 	Context("repo returns error", func() {
 		It("should return error", func() {
-			apiInstance := api.NewOvaPlaceApi(repoMock, flusherMock, producerMock, cudCounter)
+			apiInstance := api.NewOvaPlaceAPI(repoMock, flusherMock, producerMock, cudCounter, zerolog.Logger{})
 
 			place := models.Place{
 				ID:     1,
@@ -458,9 +436,7 @@ var _ = Describe("Api", func() {
 				Seat:   "24G",
 			}
 
-			repoMock.EXPECT().DescribeEntity(gomock.Eq(place.ID)).Return(nil, errors.New("test error"))
-
-			ctx := context.TODO()
+			repoMock.EXPECT().DescribeEntity(ctx, gomock.Eq(place.ID)).Return(nil, errors.New("test error"))
 
 			request := desc.RemovePlaceRequestV1{
 				PlaceId: place.ID,
@@ -474,7 +450,7 @@ var _ = Describe("Api", func() {
 
 	Context("row not found", func() {
 		It("should return error", func() {
-			apiInstance := api.NewOvaPlaceApi(repoMock, flusherMock, producerMock, cudCounter)
+			apiInstance := api.NewOvaPlaceAPI(repoMock, flusherMock, producerMock, cudCounter, zerolog.Logger{})
 
 			place := models.Place{
 				ID:     1,
@@ -484,7 +460,7 @@ var _ = Describe("Api", func() {
 			}
 
 			gomock.InOrder(
-				repoMock.EXPECT().DescribeEntity(gomock.Eq(place.ID)).Return(nil, &repo.NotFound{}),
+				repoMock.EXPECT().DescribeEntity(ctx, gomock.Eq(place.ID)).Return(nil, &repo.NotFound{}),
 			)
 
 			ctx := context.TODO()

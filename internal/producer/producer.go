@@ -1,18 +1,19 @@
 package producer
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/Shopify/sarama"
 )
 
-// Producer is an interface for sending data to kafka
+// Producer is an interface for sending data to kafka.
 type Producer interface {
-	Push(topic string, message []byte) error
+	Push(ctx context.Context, topic string, message []byte) error
 	Close() error
 }
 
-// NewProducer returns Producer
+// NewProducer returns Producer.
 func NewProducer(brokersURL []string) (Producer, error) {
 	config := sarama.NewConfig()
 	config.Producer.Return.Successes = true
@@ -27,13 +28,13 @@ func NewProducer(brokersURL []string) (Producer, error) {
 	}, nil
 }
 
-// producer is a Producer implementation
+// producer is a Producer implementation.
 type producer struct {
 	conn sarama.SyncProducer
 }
 
-// Push sends byte message to kafka
-func (p *producer) Push(topic string, message []byte) error {
+// Push sends byte message to kafka.
+func (p *producer) Push(ctx context.Context, topic string, message []byte) error {
 	msg := &sarama.ProducerMessage{
 		Topic: topic,
 		Value: sarama.StringEncoder(message),
@@ -46,7 +47,7 @@ func (p *producer) Push(topic string, message []byte) error {
 	return nil
 }
 
-// Close closes the connection with kafka
+// Close closes the connection with kafka.
 func (p *producer) Close() error {
 	err := p.conn.Close()
 	if err != nil {

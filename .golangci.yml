@@ -1,0 +1,27 @@
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+
+issues:
+  exclude-use-default: false
+
+linters:
+  disable-all: true
+  enable:
+    - unused
+    - structcheck
+    - errcheck
+    - ineffassign
+    - deadcode
+    - depguard
+    - gomnd
+    - gofmt
+    - goimports
+    - gosec
+    - godot
+    - godox
+
+run:
+  issues-exit-code: 1
+  timeout: 5m
+

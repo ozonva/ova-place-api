@@ -6,6 +6,7 @@ import (
 	"github.com/ozonva/ova-place-api/internal/models"
 )
 
+// SplitPlacesToBatches splits slice to slice of slices and returns result slice.
 func SplitPlacesToBatches(entities []models.Place, batchSize int) ([][]models.Place, error) {
 
 	if batchSize == 0 {
@@ -37,6 +38,7 @@ func SplitPlacesToBatches(entities []models.Place, batchSize int) ([][]models.Pl
 	return splitted, nil
 }
 
+// PlacesSliceToMap converts slice to map (key is a user_id) and returns result map.
 func PlacesSliceToMap(entities []models.Place) (map[uint64]models.Place, error) {
 	resultMap := make(map[uint64]models.Place, len(entities))
 

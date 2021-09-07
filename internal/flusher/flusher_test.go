@@ -17,6 +17,7 @@ var _ = Describe("Flusher", func() {
 	var (
 		repoMock *mocks.MockRepo
 		places   []models.Place
+		ctx      context.Context
 	)
 	BeforeEach(func() {
 		ctrl := gomock.NewController(GinkgoT())
@@ -29,6 +30,8 @@ var _ = Describe("Flusher", func() {
 			{UserID: 1, Memo: "Train", Seat: "4 71"},
 			{UserID: 1, Memo: "Aero", Seat: "34G"},
 		}
+
+		ctx = context.TODO()
 	})
 
 	Describe("Flush places", func() {
@@ -37,11 +40,11 @@ var _ = Describe("Flusher", func() {
 				flusherInstance := flusher.NewFlusher(2, repoMock)
 
 				gomock.InOrder(
-					repoMock.EXPECT().AddEntities(gomock.Eq(places[0:2])).Return(nil),
-					repoMock.EXPECT().AddEntities(gomock.Eq(places[2:4])).Return(nil),
+					repoMock.EXPECT().AddEntities(ctx, gomock.Eq(places[0:2])).Return(nil),
+					repoMock.EXPECT().AddEntities(ctx, gomock.Eq(places[2:4])).Return(nil),
 				)
 
-				Expect(flusherInstance.Flush(context.TODO(), places) == nil).To(BeTrue())
+				Expect(flusherInstance.Flush(ctx, places) == nil).To(BeTrue())
 			})
 		})
 
@@ -50,11 +53,11 @@ var _ = Describe("Flusher", func() {
 				flusherInstance := flusher.NewFlusher(3, repoMock)
 
 				gomock.InOrder(
-					repoMock.EXPECT().AddEntities(gomock.Eq(places[0:3])).Return(nil),
-					repoMock.EXPECT().AddEntities(gomock.Eq(places[3:4])).Return(nil),
+					repoMock.EXPECT().AddEntities(ctx, gomock.Eq(places[0:3])).Return(nil),
+					repoMock.EXPECT().AddEntities(ctx, gomock.Eq(places[3:4])).Return(nil),
 				)
 
-				Expect(flusherInstance.Flush(context.TODO(), places) == nil).To(BeTrue())
+				Expect(flusherInstance.Flush(ctx, places) == nil).To(BeTrue())
 			})
 		})
 
@@ -62,7 +65,7 @@ var _ = Describe("Flusher", func() {
 			It("should return all inputted places", func() {
 				flusherInstance := flusher.NewFlusher(0, repoMock)
 
-				Expect(flusherInstance.Flush(context.TODO(), places)).To(Equal(places))
+				Expect(flusherInstance.Flush(ctx, places)).To(Equal(places))
 			})
 		})
 
@@ -71,11 +74,11 @@ var _ = Describe("Flusher", func() {
 				flusherInstance := flusher.NewFlusher(2, repoMock)
 
 				gomock.InOrder(
-					repoMock.EXPECT().AddEntities(gomock.Eq(places[0:2])).Return(errors.New("some error")),
-					repoMock.EXPECT().AddEntities(gomock.Eq(places[2:4])).Return(errors.New("some error")),
+					repoMock.EXPECT().AddEntities(ctx, gomock.Eq(places[0:2])).Return(errors.New("some error")),
+					repoMock.EXPECT().AddEntities(ctx, gomock.Eq(places[2:4])).Return(errors.New("some error")),
 				)
 
-				Expect(flusherInstance.Flush(context.TODO(), places)).To(Equal(places))
+				Expect(flusherInstance.Flush(ctx, places)).To(Equal(places))
 			})
 		})
 
@@ -84,11 +87,11 @@ var _ = Describe("Flusher", func() {
 				flusherInstance := flusher.NewFlusher(2, repoMock)
 
 				gomock.InOrder(
-					repoMock.EXPECT().AddEntities(gomock.Eq(places[0:2])).Return(errors.New("some error")),
-					repoMock.EXPECT().AddEntities(gomock.Eq(places[2:4])).Return(nil),
+					repoMock.EXPECT().AddEntities(ctx, gomock.Eq(places[0:2])).Return(errors.New("some error")),
+					repoMock.EXPECT().AddEntities(ctx, gomock.Eq(places[2:4])).Return(nil),
 				)
 
-				Expect(flusherInstance.Flush(context.TODO(), places)).To(Equal(places[0:2]))
+				Expect(flusherInstance.Flush(ctx, places)).To(Equal(places[0:2]))
 			})
 		})
 	})
