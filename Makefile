@@ -75,3 +75,4 @@ mocks:
 	mockgen -destination=./mocks/repo_mock.go -package=mocks github.com/ozonva/ova-place-api/internal/repo Repo
 	mockgen -destination=./mocks/producer_mock.go -package=mocks github.com/ozonva/ova-place-api/internal/producer Producer
 	mockgen -destination=./mocks/counter_mock.go -package=mocks github.com/ozonva/ova-place-api/internal/metrics Counter
+	mockgen -destination=./mocks/saver_mock.go -package=mocks github.com/ozonva/ova-place-api/internal/saver Saver

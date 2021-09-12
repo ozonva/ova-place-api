@@ -38,8 +38,8 @@ var _ = Describe("Saver", func() {
 
 				flusherMock.EXPECT().Flush(gomock.Any(), gomock.Eq(places[0:2])).Return([]models.Place{})
 
-				Expect(saverInstance.Save(places[0])).To(BeNil())
-				Expect(saverInstance.Save(places[1])).To(BeNil())
+				Expect(saverInstance.Save(context.TODO(), places[0])).To(BeNil())
+				Expect(saverInstance.Save(context.TODO(), places[1])).To(BeNil())
 				Expect(saverInstance.Close()).To(BeNil())
 			})
 		})
@@ -51,9 +51,9 @@ var _ = Describe("Saver", func() {
 				flusherMock.EXPECT().Flush(gomock.Any(), gomock.Eq(places[0:1])).Return([]models.Place{})
 				flusherMock.EXPECT().Flush(gomock.Any(), gomock.Eq(places[1:2])).Return([]models.Place{})
 
-				Expect(saverInstance.Save(places[0])).To(BeNil())
+				Expect(saverInstance.Save(context.TODO(), places[0])).To(BeNil())
 				time.Sleep(time.Millisecond * 4)
-				Expect(saverInstance.Save(places[1])).To(BeNil())
+				Expect(saverInstance.Save(context.TODO(), places[1])).To(BeNil())
 				Expect(saverInstance.Close()).To(BeNil())
 			})
 		})
@@ -64,8 +64,8 @@ var _ = Describe("Saver", func() {
 
 				flusherMock.EXPECT().Flush(gomock.Any(), gomock.Eq(places[0:1])).Return([]models.Place{})
 
-				Expect(saverInstance.Save(places[0])).To(BeNil())
-				Expect(saverInstance.Save(places[1])).To(Not(BeNil()))
+				Expect(saverInstance.Save(context.TODO(), places[0])).To(BeNil())
+				Expect(saverInstance.Save(context.TODO(), places[1])).To(Not(BeNil()))
 				Expect(saverInstance.Close()).To(BeNil())
 			})
 		})
@@ -76,8 +76,8 @@ var _ = Describe("Saver", func() {
 
 				flusherMock.EXPECT().Flush(gomock.Any(), gomock.Eq(places[0:2])).Return(places[0:1])
 
-				Expect(saverInstance.Save(places[0])).To(BeNil())
-				Expect(saverInstance.Save(places[1])).To(BeNil())
+				Expect(saverInstance.Save(context.TODO(), places[0])).To(BeNil())
+				Expect(saverInstance.Save(context.TODO(), places[1])).To(BeNil())
 				Expect(saverInstance.Close()).To(Not(BeNil()))
 			})
 		})
