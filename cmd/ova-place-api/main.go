@@ -12,20 +12,18 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
-
-	"github.com/rs/zerolog"
-	"gopkg.in/natefinch/lumberjack.v2"
-
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
-	"github.com/opentracing/opentracing-go"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
+	"gopkg.in/natefinch/lumberjack.v2"
 
 	"github.com/ozonva/ova-place-api/internal/api"
 	flusher "github.com/ozonva/ova-place-api/internal/flusher"
@@ -33,6 +31,7 @@ import (
 	"github.com/ozonva/ova-place-api/internal/metrics"
 	"github.com/ozonva/ova-place-api/internal/producer"
 	"github.com/ozonva/ova-place-api/internal/repo"
+	"github.com/ozonva/ova-place-api/internal/saver"
 	"github.com/ozonva/ova-place-api/internal/tracing"
 	desc "github.com/ozonva/ova-place-api/pkg/ova-place-api"
 )
@@ -51,10 +50,8 @@ func init() {
 	}
 }
 
-func runGrpc(db *sqlx.DB, producer *producer.Producer, listener net.Listener, loggerInstance zerolog.Logger) *grpc.Server {
+func runGrpc(producer *producer.Producer, listener net.Listener, loggerInstance zerolog.Logger, saverInstance saver.Saver, repoInstance repo.Repo) *grpc.Server {
 	grpcServer := grpc.NewServer()
-	repoInstance := repo.NewRepo(db)
-	flusherInstance := flusher.NewFlusher(getIntEnv("BATCH_SIZE"), repoInstance)
 
 	cudCounterInstance := metrics.NewCudCounter(
 		promauto.NewCounter(prometheus.CounterOpts{
@@ -71,7 +68,7 @@ func runGrpc(db *sqlx.DB, producer *producer.Producer, listener net.Listener, lo
 		}),
 	)
 
-	desc.RegisterOvaPlaceApiV1Server(grpcServer, api.NewOvaPlaceAPI(repoInstance, flusherInstance, *producer, cudCounterInstance, loggerInstance))
+	desc.RegisterOvaPlaceApiV1Server(grpcServer, api.NewOvaPlaceAPI(repoInstance, saverInstance, *producer, cudCounterInstance, loggerInstance))
 
 	go func(server *grpc.Server) {
 		if err := grpcServer.Serve(listener); err != nil {
@@ -161,17 +158,21 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
+	repoInstance := repo.NewRepo(db)
+	flusherInstance := flusher.NewFlusher(getIntEnv("BATCH_SIZE"), repoInstance)
+	saverInstance := saver.NewSaver(context.Background(), uint(getIntEnv("SAVER_CAPACITY")), time.Second*time.Duration(getIntEnv("SAVER_TIMEOUT")), flusherInstance)
+
 	tracer, closer := tracing.Init("ova-place-api")
 	opentracing.SetGlobalTracer(tracer)
 
 	httpServers := runHTTPServers(db, &producerInstance)
-	grpcServer := runGrpc(db, &producerInstance, listener, loggerInstance)
+	grpcServer := runGrpc(&producerInstance, listener, loggerInstance, saverInstance, repoInstance)
 
-	defer freeUpResources(httpServers, grpcServer, db, producerInstance, listener, closer, lumberjackInstance)
+	defer freeUpResources(httpServers, grpcServer, db, producerInstance, listener, closer, lumberjackInstance, saverInstance)
 
 	if <-sigCh; true {
 		log.Println("Gracefully stopping")
-		freeUpResources(httpServers, grpcServer, db, producerInstance, listener, closer, lumberjackInstance)
+		freeUpResources(httpServers, grpcServer, db, producerInstance, listener, closer, lumberjackInstance, saverInstance)
 		os.Exit(0)
 	}
 }
@@ -182,7 +183,8 @@ func freeUpResources(httpServers []*http.Server,
 	producerInstance producer.Producer,
 	listener net.Listener,
 	closer io.Closer,
-	lumberjackInstance *lumberjack.Logger) {
+	lumberjackInstance *lumberjack.Logger,
+	saverInstance saver.Saver) {
 
 	for index := range httpServers {
 		err := httpServers[index].Shutdown(context.Background())
@@ -216,6 +218,11 @@ func freeUpResources(httpServers []*http.Server,
 	err = lumberjackInstance.Close()
 	if err != nil {
 		log.Fatalf("failed to close the lumberjack: %v", err)
+	}
+
+	err = saverInstance.Close()
+	if err != nil {
+		log.Fatalf("failed to close the saver: %v", err)
 	}
 }
 

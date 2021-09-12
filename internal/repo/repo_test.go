@@ -57,7 +57,7 @@ var _ = Describe("Repo", func() {
 			log.Fatalf("cannot start docker container: %v", err)
 		}
 
-		time.Sleep(time.Second * 3)
+		time.Sleep(time.Second * 4)
 
 		repoConnection, err = sqlx.Connect(dbDriver, dbString)
 		if err != nil {

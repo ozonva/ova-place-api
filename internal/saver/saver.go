@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/opentracing/opentracing-go"
 	"github.com/rs/zerolog/log"
 
 	"github.com/ozonva/ova-place-api/internal/flusher"
@@ -16,9 +17,8 @@ import (
 
 // Saver is an interface for models.Place periodic saving.
 type Saver interface {
-	Save(entity models.Place) error
+	Save(ctx context.Context, entity models.Place) error
 	Close() error
-	init(tickDuration time.Duration)
 }
 
 // NewSaver returns Saver.
@@ -53,9 +53,12 @@ type saver struct {
 // Save adds models.Place to the buffer.
 // It returns nil when the models.Place has been successfully added in a buffer.
 // It returns an error when the buffer capacity is exceeded.
-func (s *saver) Save(entity models.Place) error {
+func (s *saver) Save(ctx context.Context, entity models.Place) error {
 	s.m.Lock()
 	defer s.m.Unlock()
+
+	span, _ := opentracing.StartSpanFromContext(ctx, "add_to_save_buffer")
+	defer span.Finish()
 
 	if len(s.entities) >= cap(s.entities) {
 		return errors.New("capacity is exceeded")

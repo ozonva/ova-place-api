@@ -5,26 +5,25 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/rs/zerolog"
-
 	"github.com/opentracing/opentracing-go"
+	"github.com/rs/zerolog"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/ozonva/ova-place-api/internal/event"
-	"github.com/ozonva/ova-place-api/internal/flusher"
 	"github.com/ozonva/ova-place-api/internal/metrics"
 	"github.com/ozonva/ova-place-api/internal/models"
 	"github.com/ozonva/ova-place-api/internal/producer"
 	"github.com/ozonva/ova-place-api/internal/repo"
+	"github.com/ozonva/ova-place-api/internal/saver"
 	desc "github.com/ozonva/ova-place-api/pkg/ova-place-api"
 )
 
 type api struct {
 	desc.UnimplementedOvaPlaceApiV1Server
 	repo       repo.Repo
-	flusher    flusher.Flusher
+	saver      saver.Saver
 	producer   producer.Producer
 	cudCounter metrics.CudCounter
 	logger     zerolog.Logger
@@ -33,14 +32,14 @@ type api struct {
 // NewOvaPlaceAPI returns desc.OvaPlaceApiV1Server instance.
 func NewOvaPlaceAPI(
 	repo repo.Repo,
-	flusher flusher.Flusher,
+	saver saver.Saver,
 	producer producer.Producer,
 	cudCounter metrics.CudCounter,
 	logger zerolog.Logger,
 ) desc.OvaPlaceApiV1Server {
 	return &api{
 		repo:       repo,
-		flusher:    flusher,
+		saver:      saver,
 		producer:   producer,
 		cudCounter: cudCounter,
 		logger:     logger,
@@ -61,6 +60,9 @@ func (a *api) CreatePlaceV1(
 		Str("Seat", req.Seat).
 		Str("Memo", req.Memo).
 		Msg("Create place called")
+
+	span, ctx := opentracing.StartSpanFromContext(ctx, "create_place")
+	defer span.Finish()
 
 	model := models.Place{
 		Memo:   req.Memo,
@@ -114,12 +116,23 @@ func (a *api) MultiCreatePlaceV1(
 		Msg("Multi create place called")
 
 	places := make([]models.Place, len(req.PlacesCreationData))
+	notSavedPlaces := make([]*desc.CreatePlaceRequestV1, 0, len(req.PlacesCreationData))
 
 	for index := range req.PlacesCreationData {
 		places[index] = models.Place{
 			UserID: req.PlacesCreationData[index].UserId,
 			Seat:   req.PlacesCreationData[index].Seat,
 			Memo:   req.PlacesCreationData[index].Memo,
+		}
+
+		err := a.saver.Save(ctx, places[index])
+		if err != nil {
+			a.logger.Error().Err(fmt.Errorf("cannot Save: %w", err)).Msg("Error from api")
+			notSavedPlaces = append(notSavedPlaces, &desc.CreatePlaceRequestV1{
+				UserId: places[index].UserID,
+				Seat:   places[index].Seat,
+				Memo:   places[index].Memo,
+			})
 		}
 
 		eventInstance, err := event.NewEvent("create", places[index])
@@ -135,19 +148,7 @@ func (a *api) MultiCreatePlaceV1(
 		}
 	}
 
-	notSaved := a.flusher.Flush(ctx, places)
-
-	notSavedPlaces := make([]*desc.CreatePlaceRequestV1, len(notSaved))
-
-	for index := range notSaved {
-		notSavedPlaces[index] = &desc.CreatePlaceRequestV1{
-			UserId: notSaved[index].UserID,
-			Seat:   notSaved[index].Seat,
-			Memo:   notSaved[index].Memo,
-		}
-	}
-
-	a.cudCounter.SuccessfulCreates.Add(float64(len(places) - len(notSaved)))
+	a.cudCounter.SuccessfulCreates.Add(float64(len(places) - len(notSavedPlaces)))
 
 	return &desc.MultiCreatePlaceResponseV1{
 		NotAdded: notSavedPlaces,
@@ -166,6 +167,9 @@ func (a *api) DescribePlaceV1(
 	a.logger.Debug().
 		Uint64("PlaceId", req.PlaceId).
 		Msg("Describe place called")
+
+	span, ctx := opentracing.StartSpanFromContext(ctx, "describe_place")
+	defer span.Finish()
 
 	place, err := a.repo.DescribeEntity(ctx, req.PlaceId)
 	if err != nil {
@@ -194,6 +198,9 @@ func (a *api) ListPlacesV1(
 		Uint64("Page", req.Page).
 		Uint64("PerPage", req.PerPage).
 		Msg("List place called")
+
+	span, ctx := opentracing.StartSpanFromContext(ctx, "list_place")
+	defer span.Finish()
 
 	totalCount, err := a.repo.TotalCount(ctx)
 	if err != nil {
@@ -244,6 +251,9 @@ func (a *api) UpdatePlaceV1(
 		Str("Memo", req.Memo).
 		Msg("Update place called")
 
+	span, ctx := opentracing.StartSpanFromContext(ctx, "update_place")
+	defer span.Finish()
+
 	model := models.Place{
 		Memo:   req.Memo,
 		Seat:   req.Seat,
@@ -290,6 +300,9 @@ func (a *api) RemovePlaceV1(
 	a.logger.Debug().
 		Uint64("PlaceId", req.PlaceId).
 		Msg("Remove place called")
+
+	span, ctx := opentracing.StartSpanFromContext(ctx, "remove_place")
+	defer span.Finish()
 
 	model, err := a.repo.DescribeEntity(ctx, req.PlaceId)
 	if err != nil {
