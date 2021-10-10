@@ -8,3 +8,6 @@
 
 ##Grafana
 [Dashboard](http://localhost:3000/)
+
+##Copy logs
+`docker cp golang:/system.log ./logs/system.log`
