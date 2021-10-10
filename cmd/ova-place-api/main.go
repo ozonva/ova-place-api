@@ -37,14 +37,14 @@ import (
 )
 
 const (
-	logFilePath   = "../logs/system.log"
+	logFilePath   = "./system.log"
 	maxLogSize    = 10
 	maxLogBackups = 5
 	maxLogAge     = 28
 )
 
 func init() {
-	err := godotenv.Load("../.env")
+	err := godotenv.Load("./.env")
 	if err != nil {
 		log.Fatalln(err)
 	}

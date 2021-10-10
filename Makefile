@@ -60,7 +60,7 @@ deps:
 
 .PHONY: build
 build: deps
-	go build -o $(CURDIR)/bin $(CURDIR)/cmd/ova-place-api/main.go
+	CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o $(CURDIR)/bin $(CURDIR)/cmd/ova-place-api/main.go
 
 bin-deps:
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1
